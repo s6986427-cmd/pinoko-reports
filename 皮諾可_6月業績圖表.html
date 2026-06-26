@@ -86,13 +86,13 @@
   </div>
 </div>
 <script>
-if(localStorage.getItem('pinoko_auth')==='1') document.getElementById('auth-overlay').style.display='none';
+if(sessionStorage.getItem('pinoko_auth')==='1') document.getElementById('auth-overlay').style.display='none';
 document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('auth-pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doAuth(); });
 });
 function doAuth(){
   if(document.getElementById('auth-pw').value==='romancepinokoclub760831'){
-    localStorage.setItem('pinoko_auth','1');
+    sessionStorage.setItem('pinoko_auth','1');
     document.getElementById('auth-overlay').style.display='none';
   } else {
     document.getElementById('auth-err').textContent='密碼錯誤，請再試一次';
