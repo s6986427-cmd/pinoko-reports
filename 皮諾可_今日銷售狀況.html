@@ -28,7 +28,7 @@
 <body>
 <div class="header">
   <h1>皮諾可泡沫紅茶 台南門市｜今日銷售狀況 6/26</h1>
-  <p>資料來源：UShow POS｜更新時間：2026/6/26 下午9:19</p>
+  <p>資料來源：UShow POS｜更新時間：2026/6/26 下午9:24</p>
 </div>
 <div class="stats-grid">
   <div class="stat-card"><div class="label">今日總營業額</div><div class="value" style="color:#27ae60">$0</div><div class="sub">含折讓</div></div>
@@ -51,5 +51,6 @@
 const CATS=[{"label":"皮諾可","value":0,"color":"#5B8FF9"},{"label":"台南美好事物放送局","value":0,"color":"#5AD8A6"},{"label":"世界漂亮在台協會","value":0,"color":"#F6BD16"}];const total=0;
 new Chart(document.getElementById('chart_pie'),{type:'doughnut',data:{labels:CATS.map(c=>c.label),datasets:[{data:CATS.map(c=>c.value),backgroundColor:CATS.map(c=>c.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.toLocaleString()+' ('+(total>0?(ctx.parsed/total*100).toFixed(1):0)+'%)'}}}}});
 new Chart(document.getElementById('chart_bar'),{type:'bar',data:{labels:CATS.map(c=>c.label),datasets:[{data:CATS.map(c=>c.value),backgroundColor:CATS.map(c=>c.color+'cc'),borderColor:CATS.map(c=>c.color),borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString()}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});
+
 </script>
 </body></html>
