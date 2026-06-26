@@ -420,13 +420,30 @@ async function verifyPreviousDays(token, year, month, dir, todayIso) {
   return mismatch;
 }
 
+// ── 更新 index.html 月份連結 ──────────────────────────────────────────────────
+
+function updateIndexHtml(month) {
+  const indexPath = path.join(PINOKO_WEB_DIR, 'index.html');
+  if (!fs.existsSync(indexPath)) return;
+  let html = fs.readFileSync(indexPath, 'utf8');
+  // 替換月業績圖表連結（任何月份 → 當月）
+  const updated = html.replace(
+    /href="皮諾可_\d+月業績圖表\.html"/,
+    `href="皮諾可_${month}月業績圖表.html"`
+  );
+  if (updated !== html) {
+    fs.writeFileSync(indexPath, updated, 'utf8');
+    console.log(`✅ index.html 更新為 ${month}月業績圖表`);
+  }
+}
+
 // ── GitHub Pages 部署 ─────────────────────────────────────────────────────────
 
 async function deployToGitHub() {
   if (IS_CLOUD) { console.log('（雲端環境，由 Actions 負責 commit）'); return; }
   console.log('部署到 GitHub Pages...');
   try {
-    execSync(`node "/Users/chun/Desktop/pinoko-web/deploy.js"`, { stdio: 'inherit' });
+    execSync(`/Users/chun/.nvm/versions/node/v24.16.0/bin/node "/Users/chun/Desktop/pinoko-web/deploy.js"`, { stdio: 'inherit' });
     console.log('✅ GitHub Pages 更新完成');
   } catch (e) {
     console.error('GitHub Pages 部署失敗:', e.message);
@@ -521,6 +538,7 @@ async function main() {
   const todayHtml = buildTodayHtml({ todayTotal, brandToday, todayExpense, todaySheets, productsByBrand }, updatedAt, dateLabel);
   fs.writeFileSync(path.join(dir,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
   fs.writeFileSync(path.join(PINOKO_WEB_DIR,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
+  updateIndexHtml(month);
   console.log(`✅ 今日銷售狀況 更新完成`);
 
   console.log('驗證前兩日資料...');
