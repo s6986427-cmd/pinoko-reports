@@ -88,6 +88,12 @@ async function main() {
       git('commit', '-m', '更新皮諾可報表（已加密碼保護）');
     }
 
+    // 先 pull rebase，避免其他腳本同時推送導致 rejected
+    spawnSync('git', ['-C', SRC, 'pull', '--rebase', 'origin', 'main'], {
+      encoding: 'utf8', stdio: 'inherit',
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }
+    });
+
     console.log('推送到 GitHub...');
     const pushResult = spawnSync('git', ['-C', SRC, 'push', '-u', 'origin', 'main'], {
       encoding: 'utf8', stdio: 'inherit',
