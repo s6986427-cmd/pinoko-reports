@@ -62,43 +62,6 @@
   </style>
 </head>
 <body>
-<style>
-  #auth-overlay { position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:-apple-system,'Noto Sans TC',sans-serif; }
-  #auth-overlay.hidden { display:none; }
-  .auth-box { background:white;border-radius:20px;padding:40px 32px;text-align:center;max-width:320px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4); }
-  .auth-box .ai { font-size:40px;margin-bottom:12px; }
-  .auth-box h2 { font-size:18px;font-weight:700;margin-bottom:4px;color:#333; }
-  .auth-box .sub { font-size:13px;color:#aaa;margin-bottom:24px; }
-  .auth-box input { width:100%;padding:12px 16px;border:2px solid #eee;border-radius:10px;font-size:22px;letter-spacing:6px;text-align:center;outline:none;transition:border .2s; }
-  .auth-box input:focus { border-color:#667eea; }
-  .auth-box button { margin-top:12px;width:100%;padding:13px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s; }
-  .auth-box button:hover { opacity:.9; }
-  .auth-err { color:#e74c3c;font-size:13px;margin-top:10px;height:18px; }
-</style>
-<div id="auth-overlay">
-  <div class="auth-box">
-    <div class="ai">🧋</div>
-    <h2>皮諾可報表系統</h2>
-    <div class="sub">請輸入密碼以繼續</div>
-    <input type="password" id="auth-pw" placeholder="••••••" maxlength="30" autofocus>
-    <button onclick="doAuth()">進入</button>
-    <div class="auth-err" id="auth-err"></div>
-  </div>
-</div>
-<script>
-document.addEventListener('DOMContentLoaded',function(){
-  document.getElementById('auth-pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doAuth(); });
-});
-function doAuth(){
-  if(document.getElementById('auth-pw').value==='romancepinokoclub760831'){
-    document.getElementById('auth-overlay').style.display='none';
-  } else {
-    document.getElementById('auth-err').textContent='密碼錯誤，請再試一次';
-    document.getElementById('auth-pw').value='';
-    document.getElementById('auth-pw').focus();
-  }
-}
-</script>
 
 <div class="header">
   <h1>皮諾可泡沫紅茶 台南門市｜2026年6月 業績報表</h1>
