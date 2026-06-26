@@ -58,7 +58,7 @@
 </head>
 <body>
 <style>
-  #auth-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:-apple-system,'Noto Sans TC',sans-serif; }
+  #auth-overlay { position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:-apple-system,'Noto Sans TC',sans-serif; }
   #auth-overlay.hidden { display:none; }
   .auth-box { background:white;border-radius:20px;padding:40px 32px;text-align:center;max-width:320px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4); }
   .auth-box .ai { font-size:40px;margin-bottom:12px; }
@@ -70,24 +70,26 @@
   .auth-box button:hover { opacity:.9; }
   .auth-err { color:#e74c3c;font-size:13px;margin-top:10px;height:18px; }
 </style>
+<style id="cs">body>*:not(#auth-overlay){visibility:hidden!important}</style>
 <div id="auth-overlay">
   <div class="auth-box">
     <div class="ai">🧋</div>
     <h2>皮諾可報表系統</h2>
     <div class="sub">請輸入密碼以繼續</div>
-    <input type="password" id="auth-pw" placeholder="••••••" maxlength="20" autofocus>
+    <input type="password" id="auth-pw" placeholder="••••••" maxlength="30" autofocus>
     <button onclick="doAuth()">進入</button>
     <div class="auth-err" id="auth-err"></div>
   </div>
 </div>
 <script>
 (function(){
-  if(sessionStorage.getItem('pinoko_auth')==='1') document.getElementById('auth-overlay').classList.add('hidden');
+  if(sessionStorage.getItem('pinoko_auth')==='1'){var cs=document.getElementById('cs');if(cs)cs.parentNode.removeChild(cs);document.getElementById('auth-overlay').classList.add('hidden');}
   document.getElementById('auth-pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doAuth(); });
 })();
 function doAuth(){
-  if(document.getElementById('auth-pw').value==='760831'){
+  if(document.getElementById('auth-pw').value==='romancepinokoclub760831'){
     sessionStorage.setItem('pinoko_auth','1');
+    var cs=document.getElementById('cs'); if(cs) cs.parentNode.removeChild(cs);
     document.getElementById('auth-overlay').classList.add('hidden');
   } else {
     document.getElementById('auth-err').textContent='密碼錯誤，請再試一次';
