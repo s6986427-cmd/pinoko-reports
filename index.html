@@ -36,7 +36,6 @@
   .auth-box button:hover { opacity:.9; }
   .auth-err { color:#e74c3c;font-size:13px;margin-top:10px;height:18px; }
 </style>
-<style id="cs">body>*:not(#auth-overlay){visibility:hidden!important}</style>
 <div id="auth-overlay">
   <div class="auth-box">
     <div class="ai">🧋</div>
@@ -48,15 +47,14 @@
   </div>
 </div>
 <script>
-(function(){
-  if(sessionStorage.getItem('pinoko_auth')==='1'){var cs=document.getElementById('cs');if(cs)cs.parentNode.removeChild(cs);document.getElementById('auth-overlay').classList.add('hidden');}
+if(localStorage.getItem('pinoko_auth')==='1') document.getElementById('auth-overlay').style.display='none';
+document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('auth-pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doAuth(); });
-})();
+});
 function doAuth(){
   if(document.getElementById('auth-pw').value==='romancepinokoclub760831'){
-    sessionStorage.setItem('pinoko_auth','1');
-    var cs=document.getElementById('cs'); if(cs) cs.parentNode.removeChild(cs);
-    document.getElementById('auth-overlay').classList.add('hidden');
+    localStorage.setItem('pinoko_auth','1');
+    document.getElementById('auth-overlay').style.display='none';
   } else {
     document.getElementById('auth-err').textContent='密碼錯誤，請再試一次';
     document.getElementById('auth-pw').value='';
