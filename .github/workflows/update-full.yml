@@ -20,7 +20,7 @@ jobs:
           node-version: '20'
 
       - name: 安裝套件
-        run: npm ci
+        run: npm install
 
       - name: 安裝 Playwright 瀏覽器
         run: npx playwright install chromium --with-deps
