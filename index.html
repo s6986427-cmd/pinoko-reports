@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>皮諾可泡沫紅茶｜報表中心</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, 'Noto Sans TC', sans-serif; background: #f5f6fa; color: #333; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; }
+    .logo { font-size: 36px; margin-bottom: 12px; }
+    h1 { font-size: 20px; font-weight: 700; color: #333; margin-bottom: 4px; }
+    p { font-size: 13px; color: #888; margin-bottom: 32px; }
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 480px; }
+    a.card { background: white; border-radius: 16px; padding: 24px 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; display: flex; flex-direction: column; gap: 10px; }
+    a.card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .card .icon { font-size: 32px; }
+    .card .title { font-size: 15px; font-weight: 700; color: #333; }
+    .card .desc { font-size: 12px; color: #aaa; line-height: 1.5; }
+    .card.blue { border-top: 4px solid #667eea; }
+    .card.pink { border-top: 4px solid #f5576c; }
+    .footer { margin-top: 32px; font-size: 11px; color: #ccc; }
+    @media (max-width: 400px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<style>
+  #auth-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:-apple-system,'Noto Sans TC',sans-serif; }
+  #auth-overlay.hidden { display:none; }
+  .auth-box { background:white;border-radius:20px;padding:40px 32px;text-align:center;max-width:320px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+  .auth-box .ai { font-size:40px;margin-bottom:12px; }
+  .auth-box h2 { font-size:18px;font-weight:700;margin-bottom:4px;color:#333; }
+  .auth-box .sub { font-size:13px;color:#aaa;margin-bottom:24px; }
+  .auth-box input { width:100%;padding:12px 16px;border:2px solid #eee;border-radius:10px;font-size:22px;letter-spacing:6px;text-align:center;outline:none;transition:border .2s; }
+  .auth-box input:focus { border-color:#667eea; }
+  .auth-box button { margin-top:12px;width:100%;padding:13px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s; }
+  .auth-box button:hover { opacity:.9; }
+  .auth-err { color:#e74c3c;font-size:13px;margin-top:10px;height:18px; }
+</style>
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="ai">🧋</div>
+    <h2>皮諾可報表系統</h2>
+    <div class="sub">請輸入密碼以繼續</div>
+    <input type="password" id="auth-pw" placeholder="••••••" maxlength="20" autofocus>
+    <button onclick="doAuth()">進入</button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+<script>
+(function(){
+  if(sessionStorage.getItem('pinoko_auth')==='1') document.getElementById('auth-overlay').classList.add('hidden');
+  document.getElementById('auth-pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doAuth(); });
+})();
+function doAuth(){
+  if(document.getElementById('auth-pw').value==='760831'){
+    sessionStorage.setItem('pinoko_auth','1');
+    document.getElementById('auth-overlay').classList.add('hidden');
+  } else {
+    document.getElementById('auth-err').textContent='密碼錯誤，請再試一次';
+    document.getElementById('auth-pw').value='';
+    document.getElementById('auth-pw').focus();
+  }
+}
+</script>
+  <div class="logo">🧋</div>
+  <h1>皮諾可泡沫紅茶</h1>
+  <p>台南門市｜報表中心</p>
+  <div class="cards">
+    <a class="card blue" href="皮諾可_6月業績圖表.html">
+      <div class="icon">📊</div>
+      <div class="title">6月業績報表</div>
+      <div class="desc">每日趨勢、品類拆分、商品排名</div>
+    </a>
+    <a class="card pink" href="皮諾可_今日銷售狀況.html">
+      <div class="icon">📋</div>
+      <div class="title">今日銷售狀況</div>
+      <div class="desc">當日業績拆分與商品銷量排名</div>
+    </a>
+  </div>
+  <div class="footer">此頁面由腳本自動生成</div>
+</body>
+</html>
