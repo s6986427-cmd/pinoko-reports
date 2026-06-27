@@ -10,16 +10,14 @@
     .logo { font-size: 36px; margin-bottom: 12px; }
     h1 { font-size: 20px; font-weight: 700; color: #333; margin-bottom: 4px; }
     p { font-size: 13px; color: #888; margin-bottom: 32px; }
-    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 480px; }
-    a.card { background: white; border-radius: 16px; padding: 24px 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; display: flex; flex-direction: column; gap: 10px; }
+    .cards { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; max-width: 280px; }
+    a.card { background: white; border-radius: 16px; padding: 28px 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; display: flex; flex-direction: column; gap: 10px; }
     a.card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-    .card .icon { font-size: 32px; }
-    .card .title { font-size: 15px; font-weight: 700; color: #333; }
+    .card .icon { font-size: 36px; }
+    .card .title { font-size: 16px; font-weight: 700; color: #333; }
     .card .desc { font-size: 12px; color: #aaa; line-height: 1.5; }
-    .card.blue { border-top: 4px solid #667eea; }
     .card.pink { border-top: 4px solid #f5576c; }
     .footer { margin-top: 32px; font-size: 11px; color: #ccc; }
-    @media (max-width: 400px) { .cards { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -64,11 +62,6 @@ function doAuth(){
   <h1>皮諾可泡沫紅茶</h1>
   <p>台南門市｜報表中心</p>
   <div class="cards">
-    <a class="card blue" href="皮諾可_6月業績圖表.html">
-      <div class="icon">📊</div>
-      <div class="title">6月業績報表</div>
-      <div class="desc">每日趨勢、品類拆分、商品排名</div>
-    </a>
     <a class="card pink" href="皮諾可_今日銷售狀況.html">
       <div class="icon">📋</div>
       <div class="title">今日銷售狀況</div>
