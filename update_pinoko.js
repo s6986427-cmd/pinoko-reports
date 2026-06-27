@@ -538,7 +538,6 @@ async function main() {
   const todayHtml = buildTodayHtml({ todayTotal, brandToday, todayExpense, todaySheets, productsByBrand }, updatedAt, dateLabel);
   fs.writeFileSync(path.join(dir,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
   fs.writeFileSync(path.join(PINOKO_WEB_DIR,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
-  updateIndexHtml(month);
   console.log(`✅ 今日銷售狀況 更新完成`);
 
   console.log('驗證前兩日資料...');
@@ -631,8 +630,7 @@ async function main() {
   // 寫月業績圖表 HTML
   const monthHtml = buildMonthlyHtml({ dailySales, monthTotal, monthExpense, brandMonth, monthProductsByBrand }, updatedAt, year, month);
   fs.writeFileSync(path.join(dir,`皮諾可_${month}月業績圖表.html`), monthHtml, 'utf8');
-  fs.writeFileSync(path.join(PINOKO_WEB_DIR,`皮諾可_${month}月業績圖表.html`), monthHtml, 'utf8');
-  console.log(`✅ ${month}月業績圖表 更新完成`);
+  console.log(`✅ ${month}月業績圖表 更新完成（僅本機備份）`);
 
   // 月底預建下個月
   if (now.getDate() >= 28) prepareNextMonth(year, month);
