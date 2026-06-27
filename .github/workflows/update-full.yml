@@ -37,4 +37,4 @@ jobs:
           git config user.email "bot@pinoko.local"
           git add -A
           git diff --staged --quiet || git commit -m "自動全量更新 $(TZ='Asia/Taipei' date '+%Y/%m/%d %H:%M')"
-          git push
+          git push --force
