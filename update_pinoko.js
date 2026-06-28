@@ -322,6 +322,12 @@ function buildMonthlyHtml(data, updatedAt, year, month) {
     return `<tr><td style="padding:8px 10px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${b.color};margin-right:6px"></span>${b.name}</td><td style="text-align:right;padding:8px 10px;font-weight:600">$${v.toLocaleString()}</td><td style="text-align:right;padding:8px 10px;color:#888">${pct}%</td></tr>`;
   }).join('');
 
+  const DOW_ZH = ['日','一','二','三','四','五','六'];
+  const labelsWithDow = dailySales.map(d => {
+    const [y,m,dd] = d.date.split('-').map(Number);
+    return [d.label, DOW_ZH[new Date(y, m-1, dd).getDay()]];
+  });
+
   const rankingHtml = BRANDS.map(b => {
     const prods = (monthProductsByBrand && monthProductsByBrand[b.code]) || [];
     if (!prods.length) return '';
@@ -344,14 +350,15 @@ function buildMonthlyHtml(data, updatedAt, year, month) {
 
   const hourlyMonthHtml = hourlyMonth && hourlyMonth.length ? `
   <div class="chart-card">
-    <h2>⏱ 本月各時段業績累計</h2>
+    <h2>⏱ 本月各時段平均業績</h2>
+    <div class="sub-note" style="margin:-8px 0 12px">各時段業績總額 ÷ ${workDays} 個營業日</div>
     <div class="chart-wrap" style="height:200px"><canvas id="chart_hourly_month"></canvas></div>
   </div>` : '';
   const hourlyMonthJs = hourlyMonth && hourlyMonth.length ? `
 const MH_LABELS=${JSON.stringify(hourlyMonth.map(h=>h.Time+':00'))};
-const MH_TOTALS=${JSON.stringify(hourlyMonth.map(h=>h.Total))};
+const MH_AVGS=${JSON.stringify(hourlyMonth.map(h=>workDays>0?Math.round(h.Total/workDays):0))};
 const MH_COUNTS=${JSON.stringify(hourlyMonth.map(h=>h.Count))};
-new Chart(document.getElementById('chart_hourly_month'),{type:'bar',data:{labels:MH_LABELS,datasets:[{data:MH_TOTALS,backgroundColor:'rgba(102,126,234,0.65)',borderColor:'#667eea',borderWidth:1,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>i[0].label+' 時段',label:ctx=>' $'+ctx.parsed.y.toLocaleString(),afterLabel:ctx=>MH_COUNTS[ctx.dataIndex]+' 筆'}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});` : '';
+new Chart(document.getElementById('chart_hourly_month'),{type:'bar',data:{labels:MH_LABELS,datasets:[{data:MH_AVGS,backgroundColor:'rgba(102,126,234,0.65)',borderColor:'#667eea',borderWidth:1,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>i[0].label+' 時段',label:ctx=>' 平均 $'+ctx.parsed.y.toLocaleString(),afterLabel:ctx=>MH_COUNTS[ctx.dataIndex]+' 筆（本月累計）'}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});` : '';
 
   return `<!DOCTYPE html>
 <html lang="zh-TW">
@@ -416,7 +423,7 @@ new Chart(document.getElementById('chart_hourly_month'),{type:'bar',data:{labels
 </div>
 <div class="updated">此報表由腳本自動生成，每日凌晨 1:00 更新</div>
 <script>
-const LABELS=${JSON.stringify(dailySales.map(d=>d.label))};
+const LABELS=${JSON.stringify(labelsWithDow)};
 const TOTALS=${JSON.stringify(dailySales.map(d=>d.Total))};
 const EXPENSES=${JSON.stringify(dailySales.map(d=>d.Expense||0))};
 new Chart(document.getElementById('chart_daily'),{type:'line',data:{labels:LABELS,datasets:[{label:'每日業績',data:TOTALS,borderColor:'#667eea',backgroundColor:'rgba(102,126,234,0.08)',borderWidth:2,pointRadius:3,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString()}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});
