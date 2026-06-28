@@ -124,6 +124,22 @@ async function fetchDayPages(endpoint, begin, end, token) {
   return all;
 }
 
+async function fetchTimeStatistic(begin, end, token) {
+  const all = [];
+  let page = 1;
+  while (true) {
+    const r = await postApi('timestatistic', {
+      DayBegin: begin, DayEnd: end, Page: page, PageSize: 25,
+      ReportType: 'statistic', IsReturn: false, SortName: null, IsDesc: 0
+    }, token);
+    if (!r.Datas?.length) break;
+    all.push(...r.Datas);
+    if (all.length >= r.Pagination.Counts) break;
+    page++;
+  }
+  return all.sort((a, b) => parseInt(a.Time) - parseInt(b.Time));
+}
+
 // BeginDate/EndDate 格式（sale 每日彙總）
 function saleBody(begin, end, page=1, size=200) {
   return { BeginDate: begin, EndDate: end, PageSize: size, CurrentPage: page };
@@ -192,7 +208,7 @@ const SKIP_KIND = new Set(['折扣','折讓','招待','貼紙促銷','訂金','�
 // ── 今日銷售 HTML ─────────────────────────────────────────────────────────────
 
 function buildTodayHtml(data, updatedAt, dateLabel) {
-  const { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand } = data;
+  const { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday } = data;
   const net = todayTotal - todayExpense;
 
   const statsCards = BRANDS.map(b => {
@@ -220,6 +236,17 @@ function buildTodayHtml(data, updatedAt, dateLabel) {
   }).filter(Boolean).join('\n');
 
   const catJs = JSON.stringify(BRANDS.map(b=>({label:b.name,value:brandToday[b.code]||0,color:b.color})));
+
+  const hourlyHtml = hourlyToday && hourlyToday.length ? `
+  <div class="chart-card">
+    <h2>⏱ 今日各時段業績分布</h2>
+    <div class="chart-wrap" style="height:200px"><canvas id="chart_hourly"></canvas></div>
+  </div>` : '';
+  const hourlyJs = hourlyToday && hourlyToday.length ? `
+const H_LABELS=${JSON.stringify(hourlyToday.map(h=>h.Time+':00'))};
+const H_TOTALS=${JSON.stringify(hourlyToday.map(h=>h.Total))};
+const H_COUNTS=${JSON.stringify(hourlyToday.map(h=>h.Count))};
+new Chart(document.getElementById('chart_hourly'),{type:'bar',data:{labels:H_LABELS,datasets:[{data:H_TOTALS,backgroundColor:'rgba(240,147,251,0.6)',borderColor:'#f5576c',borderWidth:1,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>i[0].label+' 時段',label:ctx=>' $'+ctx.parsed.y.toLocaleString(),afterLabel:ctx=>H_COUNTS[ctx.dataIndex]+' 筆'}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});` : '';
 
   return `<!DOCTYPE html>
 <html lang="zh-TW">
@@ -267,6 +294,7 @@ function buildTodayHtml(data, updatedAt, dateLabel) {
       <div class="chart-wrap" style="height:160px"><canvas id="chart_bar"></canvas></div>
     </div>
   </div>
+  ${hourlyHtml}
   ${tables}
 </div>
 <div class="updated">此報表由腳本自動生成，顯示前一日業績｜每天 13:00~24:00 每小時更新</div>
@@ -275,6 +303,7 @@ const CATS=${catJs};const total=${todayTotal};
 new Chart(document.getElementById('chart_pie'),{type:'doughnut',data:{labels:CATS.map(c=>c.label),datasets:[{data:CATS.map(c=>c.value),backgroundColor:CATS.map(c=>c.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.toLocaleString()+' ('+(total>0?(ctx.parsed/total*100).toFixed(1):0)+'%)'}}}}});
 new Chart(document.getElementById('chart_bar'),{type:'bar',data:{labels:CATS.map(c=>c.label),datasets:[{data:CATS.map(c=>c.value),backgroundColor:CATS.map(c=>c.color+'cc'),borderColor:CATS.map(c=>c.color),borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString()}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});
 ${tableCharts}
+${hourlyJs}
 </script>
 </body></html>`;
 }
@@ -282,7 +311,7 @@ ${tableCharts}
 // ── 月業績圖表 HTML ───────────────────────────────────────────────────────────
 
 function buildMonthlyHtml(data, updatedAt, year, month) {
-  const { dailySales, monthTotal, monthExpense, brandMonth, monthProductsByBrand } = data;
+  const { dailySales, monthTotal, monthExpense, brandMonth, monthProductsByBrand, hourlyMonth } = data;
   const net = monthTotal - monthExpense;
   const workDays = dailySales.filter(d=>d.Total>0).length;
   const avg = workDays>0 ? Math.round(monthTotal/workDays) : 0;
@@ -312,6 +341,17 @@ function buildMonthlyHtml(data, updatedAt, year, month) {
     const top15 = prods.slice(0,15);
     return `new Chart(document.getElementById('chart_rank_${b.code}'),{type:'bar',data:{labels:${JSON.stringify(top15.map(p=>p.FoodName))},datasets:[{data:${JSON.stringify(top15.map(p=>p.Qty))},backgroundColor:'${b.color}cc',borderColor:'${b.color}',borderWidth:1,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x+' 件'}}},scales:{x:{grid:{color:'#f0f0f0'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});`;
   }).filter(Boolean).join('\n');
+
+  const hourlyMonthHtml = hourlyMonth && hourlyMonth.length ? `
+  <div class="chart-card">
+    <h2>⏱ 本月各時段業績累計</h2>
+    <div class="chart-wrap" style="height:200px"><canvas id="chart_hourly_month"></canvas></div>
+  </div>` : '';
+  const hourlyMonthJs = hourlyMonth && hourlyMonth.length ? `
+const MH_LABELS=${JSON.stringify(hourlyMonth.map(h=>h.Time+':00'))};
+const MH_TOTALS=${JSON.stringify(hourlyMonth.map(h=>h.Total))};
+const MH_COUNTS=${JSON.stringify(hourlyMonth.map(h=>h.Count))};
+new Chart(document.getElementById('chart_hourly_month'),{type:'bar',data:{labels:MH_LABELS,datasets:[{data:MH_TOTALS,backgroundColor:'rgba(102,126,234,0.65)',borderColor:'#667eea',borderWidth:1,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>i[0].label+' 時段',label:ctx=>' $'+ctx.parsed.y.toLocaleString(),afterLabel:ctx=>MH_COUNTS[ctx.dataIndex]+' 筆'}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});` : '';
 
   return `<!DOCTYPE html>
 <html lang="zh-TW">
@@ -364,6 +404,7 @@ function buildMonthlyHtml(data, updatedAt, year, month) {
     <h2>💰 每日業績 vs 代支比較</h2>
     <div class="chart-wrap" style="height:240px"><canvas id="chart_vs"></canvas></div>
   </div>
+  ${hourlyMonthHtml}
   <div class="chart-card">
     <h2>🍩 本月各大類業績佔比</h2>
     <div class="two-col" style="align-items:center">
@@ -383,6 +424,7 @@ new Chart(document.getElementById('chart_vs'),{type:'bar',data:{labels:LABELS,da
 const BRANDS_DATA=${JSON.stringify(BRANDS.map(b=>({label:b.name,value:brandMonth[b.code]||0,color:b.color})))};
 new Chart(document.getElementById('chart_brand'),{type:'doughnut',data:{labels:BRANDS_DATA.map(b=>b.label),datasets:[{data:BRANDS_DATA.map(b=>b.value),backgroundColor:BRANDS_DATA.map(b=>b.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.toLocaleString()}}}}});
 ${rankingCharts}
+${hourlyMonthJs}
 </script>
 </body></html>`;
 }
@@ -534,8 +576,11 @@ async function main() {
     .filter(d => d.CollectionPaymentType === '代支')
     .reduce((s,d) => s+(d.Price||0), 0);
 
+  console.log('抓取今日時段分布...');
+  const hourlyToday = await fetchTimeStatistic(todayDay, todayDay, token);
+
   // 寫今日銷售 HTML
-  const todayHtml = buildTodayHtml({ todayTotal, brandToday, todayExpense, todaySheets, productsByBrand }, updatedAt, dateLabel);
+  const todayHtml = buildTodayHtml({ todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday }, updatedAt, dateLabel);
   fs.writeFileSync(path.join(dir,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
   fs.writeFileSync(path.join(PINOKO_WEB_DIR,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
   console.log(`✅ 今日銷售狀況 更新完成`);
@@ -622,13 +667,16 @@ async function main() {
 
   BRANDS.forEach(b => monthProductsByBrand[b.code].sort((a,b) => b.Qty - a.Qty));
 
+  console.log('抓取當月時段累計...');
+  const hourlyMonth = await fetchTimeStatistic(monthStartDay, todayDay, token);
+
   // 更新 pnl_data.json
   const pnl = { days: dailySales.map(d=>({date:d.label,total:d.Total,sheets:d.Sheets})), brandMonth, monthTotal, monthExpense, updatedAt: now.toISOString() };
   fs.writeFileSync(path.join(dir,'pnl_data.json'), JSON.stringify(pnl,null,2), 'utf8');
   console.log(`✅ pnl_data.json 更新完成`);
 
   // 寫月業績圖表 HTML
-  const monthHtml = buildMonthlyHtml({ dailySales, monthTotal, monthExpense, brandMonth, monthProductsByBrand }, updatedAt, year, month);
+  const monthHtml = buildMonthlyHtml({ dailySales, monthTotal, monthExpense, brandMonth, monthProductsByBrand, hourlyMonth }, updatedAt, year, month);
   fs.writeFileSync(path.join(dir,`皮諾可_${month}月業績圖表.html`), monthHtml, 'utf8');
   console.log(`✅ ${month}月業績圖表 更新完成（僅本機備份）`);
 
