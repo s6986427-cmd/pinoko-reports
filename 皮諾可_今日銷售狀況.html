@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>皮諾可 今日銷售狀況 6/29</title>
+  <title>皮諾可 今日銷售狀況 6/30</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,'Noto Sans TC',sans-serif;background:#f5f6fa;color:#333}
@@ -27,8 +27,8 @@
 </head>
 <body>
 <div class="header">
-  <h1>皮諾可泡沫紅茶 台南門市｜今日銷售狀況 6/29</h1>
-  <p>資料來源：UShow POS｜更新時間：2026/6/30 上午1:30</p>
+  <h1>皮諾可泡沫紅茶 台南門市｜今日銷售狀況 6/30</h1>
+  <p>資料來源：UShow POS｜更新時間：2026/6/30 下午1:07</p>
 </div>
 <div class="stats-grid">
   <div class="stat-card"><div class="label">今日總營業額</div><div class="value" style="color:#27ae60">$0</div><div class="sub">含折讓</div></div>
@@ -45,6 +45,10 @@
     </div>
   </div>
   
+  <div class="chart-card">
+    <h2>⏱ 今日各時段業績分布</h2>
+    <div class="chart-wrap" style="height:200px"><canvas id="chart_hourly"></canvas></div>
+  </div>
   
 </div>
 <div class="updated">此報表由腳本自動生成，顯示前一日業績｜每天 13:00~24:00 每小時更新</div>
@@ -54,5 +58,9 @@ new Chart(document.getElementById('chart_pie'),{type:'doughnut',data:{labels:CAT
 new Chart(document.getElementById('chart_bar'),{type:'bar',data:{labels:CATS.map(c=>c.label),datasets:[{data:CATS.map(c=>c.value),backgroundColor:CATS.map(c=>c.color+'cc'),borderColor:CATS.map(c=>c.color),borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString()}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});
 
 
+const H_LABELS=["12:00"];
+const H_TOTALS=[0];
+const H_COUNTS=[0];
+new Chart(document.getElementById('chart_hourly'),{type:'bar',data:{labels:H_LABELS,datasets:[{data:H_TOTALS,backgroundColor:'rgba(240,147,251,0.6)',borderColor:'#f5576c',borderWidth:1,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>i[0].label+' 時段',label:ctx=>' $'+ctx.parsed.y.toLocaleString(),afterLabel:ctx=>H_COUNTS[ctx.dataIndex]+' 筆'}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});
 </script>
 </body></html>
