@@ -160,7 +160,7 @@ async function fetchSalePages(begin, end, token) {
 
 // ── 登入 ──────────────────────────────────────────────────────────────────────
 
-async function getToken() {
+async function getTokenOnce() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   try {
@@ -175,6 +175,19 @@ async function getToken() {
     if (!token) throw new Error('找不到 token');
     return token;
   } finally { await browser.close(); }
+}
+
+async function getToken() {
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await getTokenOnce();
+    } catch (err) {
+      if (attempt === MAX_ATTEMPTS) throw err;
+      console.log(`登入失敗（第 ${attempt} 次）：${err.message}，10 秒後重試...`);
+      await new Promise(r => setTimeout(r, 10000));
+    }
+  }
 }
 
 // ── 商品種類 → 品牌對照表 ─────────────────────────────────────────────────────
@@ -457,7 +470,8 @@ async function verifyPreviousDays(token, year, month, dir, todayIso) {
     const row = rows.find(r => r.BusinessDay === dayIso);
     const ushowTotal = row?.Total || 0;
     const pnlRow = (pnl.days||[]).find(r => r.date === dayLabel);
-    const pnlTotal = pnlRow?.total || 0;
+    // 用 ushowTotal（UShow 原始值）比對，避免注資等 extra 觸發誤判
+    const pnlTotal = pnlRow?.ushowTotal ?? pnlRow?.total ?? 0;
 
     if (Math.abs(ushowTotal - pnlTotal) > 10) {
       console.log(`  ⚠️ ${dayIso} 不符：記錄 $${pnlTotal} / UShow $${ushowTotal} → 觸發全量更新`);
@@ -677,15 +691,43 @@ async function main() {
   console.log('抓取當月時段累計...');
   const hourlyMonth = await fetchTimeStatistic(monthStartDay, todayDay, token);
 
-  // 更新 pnl_data.json
-  const pnl = { days: dailySales.map(d=>({date:d.label,total:d.Total,sheets:d.Sheets})), brandMonth, monthTotal, monthExpense, updatedAt: now.toISOString() };
-  fs.writeFileSync(path.join(dir,'pnl_data.json'), JSON.stringify(pnl,null,2), 'utf8');
+  // 更新 pnl_data.json（merge：保留 update_pnl.mjs 寫入的 balanceStart/products/catalog 等欄位）
+  const pnlPath = path.join(dir, 'pnl_data.json');
+  let existingPnl = {};
+  try { existingPnl = JSON.parse(fs.readFileSync(pnlPath, 'utf8')); } catch {}
+  // days 合併：以 update_pinoko.js 拿到的日期資料為主，但保留 update_pnl.mjs 存的 c1000/ushowTotal/extraIncome 等欄位
+  const existingDayMap = {};
+  for (const e of (existingPnl.days || [])) existingDayMap[e.date] = e;
+  const mergedDays = dailySales.map(d => ({
+    ...(existingDayMap[d.label] || {}),   // 保留 update_pnl.mjs 的詳細欄位
+    date: d.label,
+    total: existingDayMap[d.label]?.total ?? d.Total,  // 優先用含 extra 的 total
+    sheets: d.Sheets,
+  }));
+  const pnl = {
+    ...existingPnl,                    // 保留 products, catalog, totalSheets, balanceStart, balanceStartDate
+    days: mergedDays,
+    brandMonth, monthTotal, monthExpense,
+    updatedAt: now.toISOString(),
+  };
+  fs.writeFileSync(pnlPath, JSON.stringify(pnl, null, 2), 'utf8');
   console.log(`✅ pnl_data.json 更新完成`);
 
-  // 寫月業績圖表 HTML
-  const monthHtml = buildMonthlyHtml({ dailySales, monthTotal, monthExpense, brandMonth, monthProductsByBrand, hourlyMonth }, updatedAt, year, month);
-  fs.writeFileSync(path.join(dir,`皮諾可_${month}月業績圖表.html`), monthHtml, 'utf8');
-  console.log(`✅ ${month}月業績圖表 更新完成（僅本機備份）`);
+  // 月業績圖表：呼叫 generate_chart.mjs（含帳戶餘額），本機限定
+  if (!IS_CLOUD) {
+    const GENERATE_CHART = '/Users/chun/Library/Mobile Documents/com~apple~CloudDocs/下載項目/chun/stock-screener/generate_chart.mjs';
+    const nodePath = '/Users/chun/.nvm/versions/node/v24.16.0/bin/node';
+    try {
+      execSync(`"${nodePath}" "${GENERATE_CHART}"`, { stdio: 'inherit' });
+      console.log(`✅ ${month}月業績圖表 更新完成（僅本機備份）`);
+    } catch (e) {
+      // fallback：用舊方式生成（不含帳戶餘額）
+      console.log('⚠️ generate_chart.mjs 失敗，用內建版本：', e.message.slice(0, 60));
+      const monthHtml = buildMonthlyHtml({ dailySales, monthTotal, monthExpense, brandMonth, monthProductsByBrand, hourlyMonth }, updatedAt, year, month);
+      fs.writeFileSync(path.join(dir,`皮諾可_${month}月業績圖表.html`), monthHtml, 'utf8');
+      console.log(`✅ ${month}月業績圖表 更新完成（fallback 版，無帳戶餘額）`);
+    }
+  }
 
   // 月底預建下個月
   if (now.getDate() >= 28) prepareNextMonth(year, month);
@@ -694,4 +736,15 @@ async function main() {
   console.log(`[${displayTime(getTaipeiNow())}] 全量更新完成`);
 }
 
-main().catch(err => { console.error('更新失敗:', err.message); process.exit(1); });
+function notify(title, body) {
+  if (IS_CLOUD) return;
+  try {
+    execSync(`osascript -e 'display notification "${body.replace(/"/g, '\\"')}" with title "${title.replace(/"/g, '\\"')}"'`);
+  } catch {}
+}
+
+main().catch(err => {
+  console.error('更新失敗:', err.message);
+  notify('皮諾可報表 更新失敗', err.message);
+  process.exit(1);
+});
