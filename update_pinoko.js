@@ -502,6 +502,12 @@ function updateIndexHtml(month) {
 
 // ── GitHub Pages 部署 ─────────────────────────────────────────────────────────
 
+function notify(title, body) {
+  try {
+    execSync(`osascript -e 'display notification "${body.replace(/"/g, '\\"')}" with title "${title.replace(/"/g, '\\"')}"'`);
+  } catch {}
+}
+
 async function deployToGitHub() {
   if (IS_CLOUD) { console.log('（雲端環境，由 Actions 負責 commit）'); return; }
   console.log('部署到 GitHub Pages...');
@@ -510,6 +516,12 @@ async function deployToGitHub() {
     console.log('✅ GitHub Pages 更新完成');
   } catch (e) {
     console.error('GitHub Pages 部署失敗:', e.message);
+    // 每天最多通知一次，避免每 30 分鐘跳一次
+    const marker = `/tmp/pinoko_deploy_fail_notified_${isoDate(getTaipeiNow())}`;
+    if (!fs.existsSync(marker)) {
+      notify('皮諾可報表：部署失敗', 'GitHub Pages 本機部署失敗，請檢查憑證（pinoko_today.log / pinoko_full.log）');
+      fs.writeFileSync(marker, '');
+    }
   }
 }
 
