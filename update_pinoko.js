@@ -197,6 +197,7 @@ const BRAND_MAP_ID = {
   'a60ec942-7ddd-4f70-8d92-21e2440f9740': '2000',
   'e8ee982c-3fbb-47f0-917b-98063a721220': '3000',
   'add0e1e4-1e8f-4081-af55-f5fd9aa9d450': '4000',
+  'f8bda084-1f4a-4e88-be1f-9ef5ed56827b': '5000',
 };
 
 async function buildKindBrandMap(token) {
@@ -215,6 +216,7 @@ const BRANDS = [
   { code: '1000', name: '皮諾可',          color: '#5B8FF9', emoji: '🧋' },
   { code: '2000', name: '台南美好事物放送局', color: '#5AD8A6', emoji: '🛍️' },
   { code: '3000', name: '世界漂亮在台協會',  color: '#F6BD16', emoji: '🌏' },
+  { code: '5000', name: '懶獸',            color: '#FF9457', emoji: '🦥' },
 ];
 const SKIP_KIND = new Set(['折扣','折讓','招待','貼紙促銷','訂金','自訂商品']);
 
@@ -707,19 +709,34 @@ async function main() {
   const pnlPath = path.join(dir, 'pnl_data.json');
   let existingPnl = {};
   try { existingPnl = JSON.parse(fs.readFileSync(pnlPath, 'utf8')); } catch {}
-  // days 合併：以 update_pinoko.js 拿到的日期資料為主，但保留 update_pnl.mjs 存的 c1000/ushowTotal/extraIncome 等欄位
+  // days 合併：ushowTotal/ushowExpense 一律用剛抓到的即時資料覆蓋（避免中午跑到的部分數字卡住不再更新），
+  // 只保留 update_pnl.mjs 寫入的 extraIncome/extraExpense（轉帳記錄）等人工欄位，並用它們重算 total/expense/net
   const existingDayMap = {};
   for (const e of (existingPnl.days || [])) existingDayMap[e.date] = e;
-  const mergedDays = dailySales.map(d => ({
-    ...(existingDayMap[d.label] || {}),   // 保留 update_pnl.mjs 的詳細欄位
-    date: d.label,
-    total: existingDayMap[d.label]?.total ?? d.Total,  // 優先用含 extra 的 total
-    sheets: d.Sheets,
-  }));
+  const mergedDays = dailySales.map(d => {
+    const prev = existingDayMap[d.label] || {};
+    const extraIncome = prev.extraIncome || 0;
+    const extraExpense = prev.extraExpense || 0;
+    const ushowExpense = dailyExpenseMap[d.date] ?? prev.ushowExpense ?? 0;
+    const total = d.Total + extraIncome;
+    const expense = ushowExpense + extraExpense;
+    return {
+      ...prev,                // 保留 update_pnl.mjs 的 c1000~c5000 等品牌細項欄位
+      date: d.label,
+      sheets: d.Sheets,
+      ushowTotal: d.Total,
+      ushowExpense,
+      extraIncome,
+      extraExpense,
+      total,
+      expense,
+      net: total - expense,
+    };
+  });
   const pnl = {
     ...existingPnl,                    // 保留 products, catalog, totalSheets, balanceStart, balanceStartDate
     days: mergedDays,
-    brandMonth, monthTotal, monthExpense,
+    brandMonth, monthTotal, monthExpense, hourlyMonth,
     updatedAt: now.toISOString(),
   };
   fs.writeFileSync(pnlPath, JSON.stringify(pnl, null, 2), 'utf8');
@@ -745,6 +762,19 @@ async function main() {
   if (now.getDate() >= 28) prepareNextMonth(year, month);
 
   await deployToGitHub();
+
+  // 重新整理商品銷售分析 token（每天自動換新，避免頁面出現 401）
+  if (!IS_CLOUD) {
+    const nodePath = '/Users/chun/.nvm/versions/node/v24.16.0/bin/node';
+    const analysisSrc = '/Users/chun/Desktop/台南浪漫/程式/商品銷售分析.js';
+    try {
+      execSync(`"${nodePath}" "${analysisSrc}"`, { stdio: 'inherit' });
+      console.log('✅ 商品銷售分析 token 已更新');
+    } catch (e) {
+      console.log('⚠️ 商品銷售分析 token 更新失敗：', e.message.slice(0, 80));
+    }
+  }
+
   console.log(`[${displayTime(getTaipeiNow())}] 全量更新完成`);
 }
 
