@@ -549,6 +549,60 @@ render(INITIAL_DATA, '${dateLabel}');
 </body></html>`;
 }
 
+// ── 上個月桌面互動版 token 換新（月初跨月後，讓上個月也能繼續查）──────────────────
+
+async function refreshPrevMonthDesktop(token, kindMap, year, month) {
+  if (IS_CLOUD) return;
+  let py = year, pm = month - 1;
+  if (pm < 1) { pm = 12; py--; }
+  const prevDir = monthDir(py, pm);
+  const prevFile = path.join(prevDir, '皮諾可_今日銷售狀況.html');
+  if (!fs.existsSync(prevFile)) return; // 上個月沒有這份報表就跳過
+
+  try {
+    const daysInPrevMonth = new Date(py, pm, 0).getDate();
+    const dayStr = `${py}-${pm}-${daysInPrevMonth}`;
+    const isoStr = `${py}-${String(pm).padStart(2,'0')}-${String(daysInPrevMonth).padStart(2,'0')}`;
+    const dateLabel = `${pm}/${daysInPrevMonth}`;
+
+    const brandRaw = await fetchDayPages('foodmajorkindstatistic', dayStr, dayStr, token);
+    const brandToday = {};
+    let todayTotal = 0;
+    brandRaw.forEach(d => { brandToday[d.FoodMajorKindNumber] = d.Total; todayTotal += d.Total; });
+
+    const saleAll = await fetchSalePages(isoStr, isoStr, token);
+    const saleRow = saleAll.find(d => d.BusinessDay === isoStr);
+    const todaySheets = saleRow?.Sheets || 0;
+    if (todayTotal === 0 && saleRow) todayTotal = saleRow.Total || 0;
+
+    const prodRaw = await fetchDayPages('foodsalestatistic', dayStr, dayStr, token);
+    const productsByBrand = {};
+    BRANDS.forEach(b => productsByBrand[b.code] = []);
+    prodRaw
+      .filter(p => p.Qty > 0 && !SKIP_KIND.has(p.FoodKindName) && !SKIP_KIND.has(p.FoodName))
+      .forEach(p => {
+        const brand = kindMap[p.FoodKindNumber];
+        if (brand && productsByBrand[brand]) productsByBrand[brand].push(p);
+      });
+    BRANDS.forEach(b => productsByBrand[b.code].sort((a,b)=>b.Qty-a.Qty));
+
+    const cpRaw = await fetchDayPages('collectionpayment', dayStr, dayStr, token);
+    const todayExpense = cpRaw.filter(d => d.CollectionPaymentType === '代支').reduce((s,d)=>s+(d.Price||0), 0);
+
+    const hourlyToday = await fetchTimeStatistic(dayStr, dayStr, token);
+
+    const updatedAt = displayTime(getTaipeiNow());
+    const html = buildTodayHtmlDesktop(
+      { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday },
+      updatedAt, dateLabel, py, pm, token, kindMap
+    );
+    fs.writeFileSync(prevFile, html, 'utf8');
+    console.log(`✅ ${pm}月（上個月）桌面互動版 token 已換新`);
+  } catch (e) {
+    console.log('⚠️ 上個月桌面互動版換新失敗：', e.message.slice(0, 80));
+  }
+}
+
 // ── 月業績圖表 HTML ───────────────────────────────────────────────────────────
 
 function buildMonthlyHtml(data, updatedAt, year, month) {
@@ -992,6 +1046,11 @@ async function main() {
     }
   }
 
+  // 上個月桌面互動版 token 換新（讓跨月後上個月的日期選擇器繼續能查）
+  if (!IS_CLOUD) {
+    await refreshPrevMonthDesktop(token, kindMap, year, month);
+  }
+
   // 月底預建下個月
   if (now.getDate() >= 28) prepareNextMonth(year, month);
 
@@ -1019,8 +1078,15 @@ function notify(title, body) {
   } catch {}
 }
 
-main().catch(err => {
-  console.error('更新失敗:', err.message);
-  notify('皮諾可報表 更新失敗', err.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(err => {
+    console.error('更新失敗:', err.message);
+    notify('皮諾可報表 更新失敗', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  getToken, buildKindBrandMap, fetchDayPages, fetchSalePages, fetchTimeStatistic,
+  buildTodayHtmlDesktop, BRANDS, SKIP_KIND, ensureDir, getTaipeiNow, displayTime,
+};
