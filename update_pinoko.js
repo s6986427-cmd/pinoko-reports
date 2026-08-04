@@ -57,6 +57,65 @@ function ensureDir(year, month) {
   return d;
 }
 
+// ── 天氣（台南，Open-Meteo，免金鑰）──────────────────────────────────────────────
+
+const WEATHER_CODE_MAP = {
+  0: '晴天', 1: '大致晴朗', 2: '多雲', 3: '陰天',
+  45: '起霧', 48: '霧淞',
+  51: '毛毛雨（弱）', 53: '毛毛雨（中）', 55: '毛毛雨（強）',
+  56: '凍雨（弱）', 57: '凍雨（強）',
+  61: '小雨', 63: '中雨', 65: '大雨',
+  66: '凍雨（弱）', 67: '凍雨（強）',
+  71: '小雪', 73: '中雪', 75: '大雪', 77: '雪粒',
+  80: '短暫陣雨（弱）', 81: '短暫陣雨（中）', 82: '短暫陣雨（強）',
+  85: '陣雪（弱）', 86: '陣雪（強）',
+  95: '雷雨', 96: '雷雨挾冰雹（弱）', 99: '雷雨挾冰雹（強）',
+};
+
+function httpsGetJson(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, res => {
+      let d = ''; res.on('data', c => d+=c); res.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { reject(e); } });
+    }).on('error', reject);
+  });
+}
+
+async function fetchTodayWeather() {
+  try {
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=22.99&longitude=120.21&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=Asia%2FTaipei&forecast_days=1';
+    const r = await httpsGetJson(url);
+    const d = r.daily;
+    if (!d || !d.time || !d.time.length) return null;
+    return {
+      tempMax: d.temperature_2m_max[0],
+      tempMin: d.temperature_2m_min[0],
+      precipitation: d.precipitation_sum[0],
+      code: d.weathercode[0],
+      description: WEATHER_CODE_MAP[d.weathercode[0]] || '未知',
+    };
+  } catch (e) {
+    console.log('⚠️ 天氣資料抓取失敗：', e.message.slice(0,80));
+    return null;
+  }
+}
+
+function saveWeatherToPnl(dir, dateLabel, weather) {
+  if (!weather) return;
+  try {
+    const pnlPath = path.join(dir, 'pnl_data.json');
+    let pnl = {};
+    try { pnl = JSON.parse(fs.readFileSync(pnlPath, 'utf8')); } catch {}
+    pnl.days = pnl.days || [];
+    let entry = pnl.days.find(d => d.date === dateLabel);
+    if (!entry) { entry = { date: dateLabel }; pnl.days.push(entry); }
+    entry.weather = weather;
+    fs.writeFileSync(pnlPath, JSON.stringify(pnl, null, 2), 'utf8');
+    console.log(`✅ ${dateLabel} 天氣已記錄：${weather.description} ${weather.tempMin}~${weather.tempMax}°C`);
+  } catch (e) {
+    console.log('⚠️ 天氣寫入 pnl_data.json 失敗：', e.message.slice(0,80));
+  }
+}
+
 // ── API 工具 ──────────────────────────────────────────────────────────────────
 
 function httpGet(apiPath, token) {
@@ -223,8 +282,10 @@ const SKIP_KIND = new Set(['折扣','折讓','招待','貼紙促銷','訂金','�
 // ── 今日銷售 HTML ─────────────────────────────────────────────────────────────
 
 function buildTodayHtml(data, updatedAt, dateLabel) {
-  const { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday } = data;
+  const { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday, weather } = data;
   const net = todayTotal - todayExpense;
+
+  const weatherCard = weather ? `<div class="stat-card"><div class="label">☀️ 台南天氣</div><div class="value" style="font-size:16px">${weather.description}</div><div class="sub">🌡${weather.tempMin}~${weather.tempMax}°C・💧${weather.precipitation}mm</div></div>` : '';
 
   const statsCards = BRANDS.map(b => {
     const v = brandToday[b.code]||0, pct = todayTotal>0?(v/todayTotal*100).toFixed(1):'0.0';
@@ -300,6 +361,7 @@ new Chart(document.getElementById('chart_hourly'),{type:'bar',data:{labels:H_LAB
   ${statsCards}
   <div class="stat-card"><div class="label">今日代支合計</div><div class="value" style="color:#e67e22">$${todayExpense.toLocaleString()}</div><div class="sub">代收代支記錄</div></div>
   <div class="stat-card"><div class="label">今日淨業績</div><div class="value" style="color:#e74c3c">$${net.toLocaleString()}</div><div class="sub">共 ${todaySheets} 筆</div></div>
+  ${weatherCard}
 </div>
 <div class="charts">
   <div class="chart-card">
@@ -326,12 +388,13 @@ ${hourlyJs}
 // ── 今日銷售 HTML（桌面互動版：日期選擇器 + 即時查詢，僅本機）────────────────────
 
 function buildTodayHtmlDesktop(data, updatedAt, dateLabel, year, month, token, kindMap) {
-  const { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday } = data;
+  const { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday, weather } = data;
   const daysInMonth = new Date(year, month, 0).getDate();
   const pad = n => String(n).padStart(2,'0');
   const monthStartIso = `${year}-${pad(month)}-01`;
   const monthEndIso = `${year}-${pad(month)}-${pad(daysInMonth)}`;
   const todayIsoVal = `${year}-${pad(month)}-${pad(parseInt(dateLabel.split('/')[1],10))}`;
+  const weatherBadge = weather ? `<div class="weather-badge">☀️ ${dateLabel} 台南天氣：${weather.description}・🌡${weather.tempMin}~${weather.tempMax}°C・💧${weather.precipitation}mm</div>` : '';
 
   return `<!DOCTYPE html>
 <html lang="zh-TW">
@@ -350,6 +413,7 @@ function buildTodayHtmlDesktop(data, updatedAt, dateLabel, year, month, token, k
     .btn{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;border:none;border-radius:8px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer}
     .btn:hover{opacity:.9}.btn:active{opacity:.8}
     .viewing{padding:10px 32px 0;font-size:13px;color:#888}
+    .weather-badge{margin:10px 32px 0;padding:8px 16px;background:#eef7ff;border-radius:8px;font-size:12px;color:#555;display:inline-block}
     .error{margin:16px 32px;padding:16px;background:#fdecea;border-radius:8px;color:#e74c3c;font-size:13px;line-height:1.8}
     .stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:20px 32px}
     .stat-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
@@ -364,7 +428,7 @@ function buildTodayHtmlDesktop(data, updatedAt, dateLabel, year, month, token, k
     .brand-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;color:white}
     .sub-note{font-size:11px;color:#aaa;margin-bottom:16px}
     @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}}
-    @media(max-width:560px){.header{padding:16px}.header h1{font-size:17px}.query-bar{padding:12px 16px}.viewing{padding:10px 16px 0}.stats-grid{grid-template-columns:1fr 1fr;padding:12px 16px;gap:10px}.stat-card{padding:14px 12px}.stat-card .value{font-size:18px}.charts{padding:0 16px 24px}.chart-card{padding:16px}.updated{padding:8px 16px}}
+    @media(max-width:560px){.header{padding:16px}.header h1{font-size:17px}.query-bar{padding:12px 16px}.viewing{padding:10px 16px 0}.weather-badge{margin:10px 16px 0}.stats-grid{grid-template-columns:1fr 1fr;padding:12px 16px;gap:10px}.stat-card{padding:14px 12px}.stat-card .value{font-size:18px}.charts{padding:0 16px 24px}.chart-card{padding:16px}.updated{padding:8px 16px}}
     @media(max-width:380px){.stats-grid{grid-template-columns:1fr}}
   </style>
 </head>
@@ -380,6 +444,7 @@ function buildTodayHtmlDesktop(data, updatedAt, dateLabel, year, month, token, k
   <span id="queryStatus" style="font-size:12px;color:#aaa"></span>
 </div>
 <div class="viewing" id="viewingLabel">目前顯示：${dateLabel}</div>
+${weatherBadge}
 <div class="error" id="errorBox" style="display:none"></div>
 <div class="stats-grid" id="statsGrid"></div>
 <div class="charts">
@@ -849,8 +914,9 @@ async function main() {
   const dir = ensureDir(year, month);
 
   console.log('登入 UShow...');
-  const token = await getToken();
+  const [token, weather] = await Promise.all([getToken(), fetchTodayWeather()]);
   console.log('Token 取得');
+  if (weather) console.log(`天氣：${weather.description} ${weather.tempMin}~${weather.tempMax}°C・降雨${weather.precipitation}mm`);
 
   // ── 今日資料 ──────────────────────────────────────────────────────────────
 
@@ -895,7 +961,7 @@ async function main() {
   const hourlyToday = await fetchTimeStatistic(todayDay, todayDay, token);
 
   // 寫今日銷售 HTML（公開版：靜態、無 token，推到 GitHub Pages）
-  const todayData = { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday };
+  const todayData = { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday, weather };
   const todayHtml = buildTodayHtml(todayData, updatedAt, dateLabel);
   fs.writeFileSync(path.join(PINOKO_WEB_DIR,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
 
@@ -907,6 +973,8 @@ async function main() {
     fs.writeFileSync(path.join(dir,'皮諾可_今日銷售狀況.html'), todayHtmlDesktop, 'utf8');
     console.log(`✅ 今日銷售狀況（公開版 + 桌面互動版）更新完成`);
   }
+
+  saveWeatherToPnl(dir, dateLabel, weather);
 
   console.log('驗證前兩日資料...');
   const needsFull = await verifyPreviousDays(token, year, month, dir, todayIso);
