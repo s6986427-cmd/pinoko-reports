@@ -323,6 +323,232 @@ ${hourlyJs}
 </body></html>`;
 }
 
+// ── 今日銷售 HTML（桌面互動版：日期選擇器 + 即時查詢，僅本機）────────────────────
+
+function buildTodayHtmlDesktop(data, updatedAt, dateLabel, year, month, token, kindMap) {
+  const { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday } = data;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const pad = n => String(n).padStart(2,'0');
+  const monthStartIso = `${year}-${pad(month)}-01`;
+  const monthEndIso = `${year}-${pad(month)}-${pad(daysInMonth)}`;
+  const todayIsoVal = `${year}-${pad(month)}-${pad(parseInt(dateLabel.split('/')[1],10))}`;
+
+  return `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>皮諾可 今日銷售狀況（桌面版）${dateLabel}</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,'Noto Sans TC',sans-serif;background:#f5f6fa;color:#333}
+    .header{background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;padding:24px 32px}
+    .header h1{font-size:22px;font-weight:700;margin-bottom:4px}.header p{font-size:13px;opacity:.8}
+    .query-bar{display:flex;align-items:center;gap:12px;padding:16px 32px;background:white;border-bottom:1px solid #eee;flex-wrap:wrap}
+    .query-bar label{font-size:13px;color:#888}
+    .query-bar input[type=date]{border:1px solid #ddd;border-radius:8px;padding:6px 10px;font-size:14px;color:#333;outline:none}
+    .query-bar input[type=date]:focus{border-color:#f5576c}
+    .btn{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;border:none;border-radius:8px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer}
+    .btn:hover{opacity:.9}.btn:active{opacity:.8}
+    .viewing{padding:10px 32px 0;font-size:13px;color:#888}
+    .error{margin:16px 32px;padding:16px;background:#fdecea;border-radius:8px;color:#e74c3c;font-size:13px;line-height:1.8}
+    .stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:20px 32px}
+    .stat-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .stat-card .label{font-size:12px;color:#888;margin-bottom:6px}.stat-card .value{font-size:22px;font-weight:700}.stat-card .sub{font-size:12px;color:#aaa;margin-top:4px}
+    .charts{padding:0 32px 32px;display:grid;gap:24px}.chart-card{background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .chart-card h2{font-size:15px;font-weight:600;color:#555;margin-bottom:16px}.chart-wrap{position:relative}
+    .updated{text-align:right;padding:8px 32px;font-size:11px;color:#bbb}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    .ranking-table{width:100%;border-collapse:collapse;font-size:13px}
+    .ranking-table th{background:#f8f9fa;padding:8px 10px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #eee;font-size:12px}
+    .ranking-table td{border-bottom:1px solid #f0f0f0;vertical-align:middle}.ranking-table tr:last-child td{border-bottom:none}
+    .brand-header{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+    .brand-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;color:white}
+    .sub-note{font-size:11px;color:#aaa;margin-bottom:16px}
+    @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}}
+    @media(max-width:560px){.header{padding:16px}.header h1{font-size:17px}.query-bar{padding:12px 16px}.viewing{padding:10px 16px 0}.stats-grid{grid-template-columns:1fr 1fr;padding:12px 16px;gap:10px}.stat-card{padding:14px 12px}.stat-card .value{font-size:18px}.charts{padding:0 16px 24px}.chart-card{padding:16px}.updated{padding:8px 16px}}
+    @media(max-width:380px){.stats-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>皮諾可泡沫紅茶 台南門市｜今日銷售狀況（桌面互動版）</h1>
+  <p>資料來源：UShow POS｜Token 更新時間：${updatedAt}</p>
+</div>
+<div class="query-bar">
+  <label>查詢日期（僅限本月）</label>
+  <input type="date" id="dateInput" value="${todayIsoVal}" min="${monthStartIso}" max="${monthEndIso}">
+  <button class="btn" onclick="queryDate(document.getElementById('dateInput').value)">查詢</button>
+  <span id="queryStatus" style="font-size:12px;color:#aaa"></span>
+</div>
+<div class="viewing" id="viewingLabel">目前顯示：${dateLabel}</div>
+<div class="error" id="errorBox" style="display:none"></div>
+<div class="stats-grid" id="statsGrid"></div>
+<div class="charts">
+  <div class="chart-card">
+    <h2>📊 各品牌業績拆分</h2>
+    <div class="two-col" style="align-items:center">
+      <div class="chart-wrap" style="height:220px"><canvas id="chart_pie"></canvas></div>
+      <div class="chart-wrap" style="height:160px"><canvas id="chart_bar"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-card" id="hourlyCard">
+    <h2>⏱ 各時段業績分布</h2>
+    <div class="chart-wrap" style="height:200px"><canvas id="chart_hourly"></canvas></div>
+  </div>
+  <div id="rankingTables"></div>
+</div>
+<div class="updated">桌面互動版，可查詢當月任一天｜資料即時查詢 UShow POS（token 隨排程每次更新自動換新，若顯示查詢失敗代表 token 過期，等下次自動更新或手動執行 update_pinoko.js）</div>
+<script>
+const TOKEN='${token}';
+const KIND_MAP=${JSON.stringify(kindMap)};
+const BRANDS=${JSON.stringify(BRANDS)};
+const SKIP_KIND=new Set(${JSON.stringify([...SKIP_KIND])});
+let charts=[];
+
+async function postReport(endpoint, body){
+  const r = await fetch('https://api.ushowpos.com/api/reports/'+endpoint, {
+    method:'POST', headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('Token 已過期（HTTP '+r.status+'），請等下一次自動更新或手動執行 update_pinoko.js');
+  return r.json();
+}
+async function fetchDayPages(endpoint, begin, end){
+  const all=[]; let page=1;
+  while(true){
+    const r = await postReport(endpoint, {DayBegin:begin,DayEnd:end,Page:page,PageSize:200,ReportType:null,IsReturn:false,SortName:null,IsDesc:0});
+    if (!r.Datas || !r.Datas.length) break;
+    all.push(...r.Datas);
+    if (all.length >= r.Pagination.Counts) break;
+    page++;
+  }
+  return all;
+}
+async function fetchTimeStatistic(begin, end){
+  const all=[]; let page=1;
+  while(true){
+    const r = await postReport('timestatistic', {DayBegin:begin,DayEnd:end,Page:page,PageSize:25,ReportType:'statistic',IsReturn:false,SortName:null,IsDesc:0});
+    if (!r.Datas || !r.Datas.length) break;
+    all.push(...r.Datas);
+    if (all.length >= r.Pagination.Counts) break;
+    page++;
+  }
+  return all.sort((a,b)=>parseInt(a.Time)-parseInt(b.Time));
+}
+async function fetchSalePages(beginIso, endIso){
+  const all=[]; let page=1;
+  while(true){
+    const r = await postReport('sale', {BeginDate:beginIso,EndDate:endIso,PageSize:200,CurrentPage:page});
+    if (!r.Datas || !r.Datas.length) break;
+    all.push(...r.Datas);
+    if (all.length >= r.Pagination.Counts) break;
+    page++;
+  }
+  return all;
+}
+
+function medalFor(i){ return i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:#aaa">#'+(i+1)+'</span>'; }
+
+function buildBrandBlock(b, prods, sheets){
+  if (!prods.length) return '';
+  const rows = prods.map((p,i)=>{
+    const medal = medalFor(i);
+    const pct = sheets>0 ? (p.Times/sheets*100).toFixed(1) : 0;
+    const bar = sheets>0 ? Math.min(p.Times/sheets*300,100).toFixed(1) : 0;
+    return '<tr><td style="text-align:center;font-size:13px;padding:8px 10px">'+medal+'</td><td style="padding:8px 10px">'+p.FoodName+'</td><td style="text-align:right;padding:8px 10px;font-weight:600">'+p.Qty+'</td><td style="text-align:right;padding:8px 10px">$'+(p.Total||0).toLocaleString()+'</td><td style="padding:8px 10px"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:7px;background:#eee;border-radius:4px;overflow:hidden;min-width:60px"><div style="height:100%;background:'+b.color+';width:'+bar+'%;border-radius:4px"></div></div><span style="min-width:40px;font-size:12px;color:'+b.color+';font-weight:600">'+pct+'%</span></div></td></tr>';
+  }).join('');
+  return '<div class="chart-card"><div class="brand-header"><span style="font-size:20px">'+b.emoji+'</span><h2 style="margin-bottom:0">'+b.name+'｜商品銷量排名</h2><span class="brand-badge" style="background:'+b.color+'">'+prods.length+' 項</span></div><div class="sub-note">點擊率 = 含此商品訂單數 ÷ 總筆數（'+sheets+' 筆）</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px"><table class="ranking-table"><thead><tr><th style="width:42px">排名</th><th>商品</th><th style="text-align:right">銷量</th><th style="text-align:right">銷售額</th><th style="min-width:140px">點擊率</th></tr></thead><tbody>'+rows+'</tbody></table><div><canvas id="chart_rank_'+b.code+'" style="max-height:400px"></canvas></div></div></div>';
+}
+
+function render(data, dateLabel){
+  document.getElementById('viewingLabel').textContent = '目前顯示：'+dateLabel;
+  const net = data.todayTotal - data.todayExpense;
+  let statsHtml = '<div class="stat-card"><div class="label">總營業額</div><div class="value" style="color:#27ae60">$'+data.todayTotal.toLocaleString()+'</div><div class="sub">含折讓</div></div>';
+  BRANDS.forEach(b=>{
+    const v = data.brandToday[b.code]||0;
+    const pct = data.todayTotal>0 ? (v/data.todayTotal*100).toFixed(1) : '0.0';
+    statsHtml += '<div class="stat-card"><div class="label">'+b.name+'</div><div class="value" style="color:'+b.color+'">$'+v.toLocaleString()+'</div><div class="sub">'+pct+'%</div></div>';
+  });
+  statsHtml += '<div class="stat-card"><div class="label">代支合計</div><div class="value" style="color:#e67e22">$'+data.todayExpense.toLocaleString()+'</div><div class="sub">代收代支記錄</div></div>';
+  statsHtml += '<div class="stat-card"><div class="label">淨業績</div><div class="value" style="color:#e74c3c">$'+net.toLocaleString()+'</div><div class="sub">共 '+data.todaySheets+' 筆</div></div>';
+  document.getElementById('statsGrid').innerHTML = statsHtml;
+
+  charts.forEach(c=>c.destroy());
+  charts = [];
+
+  const CATS = BRANDS.map(b=>({label:b.name,value:data.brandToday[b.code]||0,color:b.color}));
+  const total = data.todayTotal;
+  charts.push(new Chart(document.getElementById('chart_pie'),{type:'doughnut',data:{labels:CATS.map(c=>c.label),datasets:[{data:CATS.map(c=>c.value),backgroundColor:CATS.map(c=>c.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.toLocaleString()+' ('+(total>0?(ctx.parsed/total*100).toFixed(1):0)+'%)'}}}}}));
+  charts.push(new Chart(document.getElementById('chart_bar'),{type:'bar',data:{labels:CATS.map(c=>c.label),datasets:[{data:CATS.map(c=>c.value),backgroundColor:CATS.map(c=>c.color+'cc'),borderColor:CATS.map(c=>c.color),borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString()}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}}));
+
+  const hourlyCard = document.getElementById('hourlyCard');
+  if (data.hourlyToday && data.hourlyToday.length){
+    hourlyCard.style.display = '';
+    const H_LABELS = data.hourlyToday.map(h=>h.Time+':00');
+    const H_TOTALS = data.hourlyToday.map(h=>h.Total);
+    const H_COUNTS = data.hourlyToday.map(h=>h.Count);
+    charts.push(new Chart(document.getElementById('chart_hourly'),{type:'bar',data:{labels:H_LABELS,datasets:[{data:H_TOTALS,backgroundColor:'rgba(240,147,251,0.6)',borderColor:'#f5576c',borderWidth:1,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>i[0].label+' 時段',label:ctx=>' $'+ctx.parsed.y.toLocaleString(),afterLabel:ctx=>H_COUNTS[ctx.dataIndex]+' 筆'}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}}));
+  } else {
+    hourlyCard.style.display = 'none';
+  }
+
+  let tablesHtml = '';
+  BRANDS.forEach(b=>{ tablesHtml += buildBrandBlock(b, data.productsByBrand[b.code]||[], data.todaySheets); });
+  document.getElementById('rankingTables').innerHTML = tablesHtml;
+  BRANDS.forEach(b=>{
+    const prods = data.productsByBrand[b.code]||[];
+    if (!prods.length) return;
+    const top15 = prods.slice(0,15);
+    const canvas = document.getElementById('chart_rank_'+b.code);
+    if (!canvas) return;
+    charts.push(new Chart(canvas,{type:'bar',data:{labels:top15.map(p=>p.FoodName),datasets:[{data:top15.map(p=>p.Qty),backgroundColor:b.color+'cc',borderColor:b.color,borderWidth:1,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x+' 件'}}},scales:{x:{grid:{color:'#f0f0f0'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}}));
+  });
+}
+
+async function queryDate(dateVal){
+  if (!dateVal) return;
+  const statusEl = document.getElementById('queryStatus');
+  const errBox = document.getElementById('errorBox');
+  errBox.style.display = 'none';
+  statusEl.textContent = '查詢中...';
+  const [y,m,d] = dateVal.split('-').map(Number);
+  const dayStr = y+'-'+m+'-'+d;
+  const label = m+'/'+d;
+  try {
+    const [brandRaw, saleAll, prodRaw, cpRaw, hourly] = await Promise.all([
+      fetchDayPages('foodmajorkindstatistic', dayStr, dayStr),
+      fetchSalePages(dateVal, dateVal),
+      fetchDayPages('foodsalestatistic', dayStr, dayStr),
+      fetchDayPages('collectionpayment', dayStr, dayStr),
+      fetchTimeStatistic(dayStr, dayStr),
+    ]);
+    const brandToday = {};
+    let total = 0;
+    brandRaw.forEach(x=>{ brandToday[x.FoodMajorKindNumber]=x.Total; total += x.Total; });
+    const saleRow = saleAll.find(r=>r.BusinessDay===dateVal);
+    const sheets = saleRow ? (saleRow.Sheets||0) : 0;
+    if (total===0 && saleRow) total = saleRow.Total || 0;
+    const productsByBrand = {};
+    BRANDS.forEach(b=>productsByBrand[b.code]=[]);
+    prodRaw.filter(p=>p.Qty>0 && !SKIP_KIND.has(p.FoodKindName) && !SKIP_KIND.has(p.FoodName)).forEach(p=>{
+      const brand = KIND_MAP[p.FoodKindNumber];
+      if (brand && productsByBrand[brand]) productsByBrand[brand].push(p);
+    });
+    BRANDS.forEach(b=>productsByBrand[b.code].sort((a,b)=>b.Qty-a.Qty));
+    const expense = cpRaw.filter(x=>x.CollectionPaymentType==='代支').reduce((s,x)=>s+(x.Price||0),0);
+    render({todayTotal:total, brandToday, todayExpense:expense, todaySheets:sheets, productsByBrand, hourlyToday:hourly}, label);
+    statusEl.textContent = '';
+  } catch(e) {
+    statusEl.textContent = '';
+    errBox.textContent = '查詢失敗：'+e.message;
+    errBox.style.display = 'block';
+  }
+}
+
+const INITIAL_DATA = {todayTotal:${todayTotal}, brandToday:${JSON.stringify(brandToday)}, todayExpense:${todayExpense}, todaySheets:${todaySheets}, productsByBrand:${JSON.stringify(productsByBrand)}, hourlyToday:${JSON.stringify(hourlyToday)}};
+render(INITIAL_DATA, '${dateLabel}');
+</script>
+</body></html>`;
+}
+
 // ── 月業績圖表 HTML ───────────────────────────────────────────────────────────
 
 function buildMonthlyHtml(data, updatedAt, year, month) {
@@ -614,11 +840,19 @@ async function main() {
   console.log('抓取今日時段分布...');
   const hourlyToday = await fetchTimeStatistic(todayDay, todayDay, token);
 
-  // 寫今日銷售 HTML
-  const todayHtml = buildTodayHtml({ todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday }, updatedAt, dateLabel);
-  fs.writeFileSync(path.join(dir,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
+  // 寫今日銷售 HTML（公開版：靜態、無 token，推到 GitHub Pages）
+  const todayData = { todayTotal, brandToday, todayExpense, todaySheets, productsByBrand, hourlyToday };
+  const todayHtml = buildTodayHtml(todayData, updatedAt, dateLabel);
   fs.writeFileSync(path.join(PINOKO_WEB_DIR,'皮諾可_今日銷售狀況.html'), todayHtml, 'utf8');
-  console.log(`✅ 今日銷售狀況 更新完成`);
+
+  if (IS_CLOUD) {
+    console.log(`✅ 今日銷售狀況（公開版）更新完成`);
+  } else {
+    // 桌面互動版：內建日期選擇器（僅限當月），即時查詢 UShow API，只存本機不推公開 repo（避免 token 外洩）
+    const todayHtmlDesktop = buildTodayHtmlDesktop(todayData, updatedAt, dateLabel, year, month, token, kindMap);
+    fs.writeFileSync(path.join(dir,'皮諾可_今日銷售狀況.html'), todayHtmlDesktop, 'utf8');
+    console.log(`✅ 今日銷售狀況（公開版 + 桌面互動版）更新完成`);
+  }
 
   console.log('驗證前兩日資料...');
   const needsFull = await verifyPreviousDays(token, year, month, dir, todayIso);
