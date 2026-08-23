@@ -257,6 +257,8 @@ const BRAND_MAP_ID = {
   'e8ee982c-3fbb-47f0-917b-98063a721220': '3000',
   'add0e1e4-1e8f-4081-af55-f5fd9aa9d450': '4000',
   'f8bda084-1f4a-4e88-be1f-9ef5ed56827b': '5000',
+  '6053ff05-b3a4-4ed6-afe5-f88c1ea9e55e': '6000', // 台灣朝聖之路（2026/8/23 新增）
+  '96327c2c-dffe-4e07-8905-69cdc5f76103': '2001', // 美好城市系列/高雄美好事物（2026/8/23 新增）
 };
 
 async function buildKindBrandMap(token) {
@@ -276,6 +278,8 @@ const BRANDS = [
   { code: '2000', name: '台南美好事物放送局', color: '#5AD8A6', emoji: '🛍️' },
   { code: '3000', name: '世界漂亮在台協會',  color: '#F6BD16', emoji: '🌏' },
   { code: '5000', name: '懶獸',            color: '#FF9457', emoji: '🦥' },
+  { code: '6000', name: '台灣朝聖之路',      color: '#D4A017', emoji: '⛩️' },
+  { code: '2001', name: '美好城市系列（高雄）', color: '#E8590C', emoji: '🏙️' },
 ];
 const SKIP_KIND = new Set(['折扣','折讓','招待','貼紙促銷','訂金','自訂商品']);
 
