@@ -1,0 +1,223 @@
+{
+  "days": [
+    {
+      "date": "9/1",
+      "sheets": 11,
+      "ushowTotal": 7240,
+      "ushowExpense": 1700,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 7240,
+      "expense": 1700,
+      "net": 5540
+    },
+    {
+      "date": "9/2",
+      "sheets": 23,
+      "ushowTotal": 21370,
+      "ushowExpense": 235,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 21370,
+      "expense": 235,
+      "net": 21135
+    },
+    {
+      "date": "9/3",
+      "sheets": 16,
+      "ushowTotal": 20490,
+      "ushowExpense": 1050,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 20490,
+      "expense": 1050,
+      "net": 19440
+    },
+    {
+      "date": "9/4",
+      "sheets": 7,
+      "ushowTotal": 2960,
+      "ushowExpense": 755,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 2960,
+      "expense": 755,
+      "net": 2205
+    },
+    {
+      "date": "9/5",
+      "weather": {
+        "tempMax": 31,
+        "tempMin": 24.3,
+        "precipitation": 0,
+        "code": 3,
+        "description": "陰天"
+      },
+      "sheets": 27,
+      "ushowTotal": 20150,
+      "ushowExpense": 150,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 20150,
+      "expense": 150,
+      "net": 20000
+    }
+  ],
+  "brandMonth": {
+    "1000": 14980,
+    "2000": 32710,
+    "2001": 2260,
+    "3000": 2670,
+    "4000": -770,
+    "6000": 20360
+  },
+  "monthTotal": 72210,
+  "monthExpense": 3890,
+  "hourlyMonth": [
+    {
+      "Time": "0",
+      "Total": 3090,
+      "Cash": 3090,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "People": 3,
+      "SaleCounts": 3,
+      "VoidCounts": 0,
+      "FoodCounts": 19,
+      "Count": 3
+    },
+    {
+      "Time": "13",
+      "Total": 6870,
+      "Cash": 6870,
+      "Change": 200,
+      "CreditCardPrice": 0,
+      "People": 5,
+      "SaleCounts": 5,
+      "VoidCounts": 0,
+      "FoodCounts": 23,
+      "Count": 5
+    },
+    {
+      "Time": "14",
+      "Total": 6650,
+      "Cash": 3710,
+      "Change": 1100,
+      "CreditCardPrice": 0,
+      "People": 11,
+      "SaleCounts": 11,
+      "VoidCounts": 1,
+      "FoodCounts": 22,
+      "Count": 11
+    },
+    {
+      "Time": "15",
+      "Total": 6440,
+      "Cash": 800,
+      "Change": 400,
+      "CreditCardPrice": 0,
+      "People": 9,
+      "SaleCounts": 6,
+      "VoidCounts": 1,
+      "FoodCounts": 21,
+      "Count": 6
+    },
+    {
+      "Time": "16",
+      "Total": 5180,
+      "Cash": 3570,
+      "Change": 50,
+      "CreditCardPrice": 0,
+      "People": 12,
+      "SaleCounts": 12,
+      "VoidCounts": 0,
+      "FoodCounts": 55,
+      "Count": 12
+    },
+    {
+      "Time": "17",
+      "Total": 8790,
+      "Cash": 7990,
+      "Change": 20,
+      "CreditCardPrice": 0,
+      "People": 9,
+      "SaleCounts": 9,
+      "VoidCounts": 1,
+      "FoodCounts": 23,
+      "Count": 9
+    },
+    {
+      "Time": "18",
+      "Total": 9915,
+      "Cash": 7415,
+      "Change": 35,
+      "CreditCardPrice": 0,
+      "People": 8,
+      "SaleCounts": 8,
+      "VoidCounts": 0,
+      "FoodCounts": 24,
+      "Count": 8
+    },
+    {
+      "Time": "19",
+      "Total": 1850,
+      "Cash": 1850,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "People": 3,
+      "SaleCounts": 3,
+      "VoidCounts": 0,
+      "FoodCounts": 4,
+      "Count": 3
+    },
+    {
+      "Time": "20",
+      "Total": 6760,
+      "Cash": 6110,
+      "Change": 520,
+      "CreditCardPrice": 0,
+      "People": 11,
+      "SaleCounts": 9,
+      "VoidCounts": 1,
+      "FoodCounts": 24,
+      "Count": 9
+    },
+    {
+      "Time": "21",
+      "Total": 8640,
+      "Cash": 7290,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "People": 13,
+      "SaleCounts": 13,
+      "VoidCounts": 0,
+      "FoodCounts": 25,
+      "Count": 13
+    },
+    {
+      "Time": "22",
+      "Total": 6165,
+      "Cash": -3395,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "People": 3,
+      "SaleCounts": 3,
+      "VoidCounts": 2,
+      "FoodCounts": 14,
+      "Count": 3
+    },
+    {
+      "Time": "23",
+      "Total": 1860,
+      "Cash": 1860,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "People": 5,
+      "SaleCounts": 2,
+      "VoidCounts": 0,
+      "FoodCounts": 10,
+      "Count": 2
+    }
+  ],
+  "updatedAt": "2026-09-06T02:47:16.000Z"
+}
