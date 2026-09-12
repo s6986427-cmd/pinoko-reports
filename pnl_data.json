@@ -127,8 +127,8 @@
         "tempMax": 30.3,
         "tempMin": 25.5,
         "precipitation": 5.8,
-        "code": 96,
-        "description": "雷雨挾冰雹（弱）"
+        "code": 95,
+        "description": "雷雨"
       },
       "sheets": 8,
       "ushowTotal": 12050,
@@ -308,5 +308,5 @@
       "Count": 4
     }
   ],
-  "updatedAt": "2026-09-13T02:16:09.000Z"
+  "updatedAt": "2026-09-13T02:57:45.000Z"
 }
