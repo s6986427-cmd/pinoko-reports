@@ -159,9 +159,9 @@
       "weather": {
         "tempMax": 30.2,
         "tempMin": 25.2,
-        "precipitation": 0.8,
-        "code": 51,
-        "description": "毛毛雨（弱）"
+        "precipitation": 5,
+        "code": 95,
+        "description": "雷雨"
       },
       "sheets": 9,
       "ushowTotal": 6850,
@@ -354,5 +354,5 @@
       "Count": 4
     }
   ],
-  "updatedAt": "2026-09-16T02:42:11.000Z"
+  "updatedAt": "2026-09-16T04:00:23.000Z"
 }
