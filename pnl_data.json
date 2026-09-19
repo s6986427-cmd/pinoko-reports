@@ -201,11 +201,11 @@
     {
       "date": "9/19",
       "weather": {
-        "tempMax": 31.3,
-        "tempMin": 25.7,
-        "precipitation": 0,
-        "code": 1,
-        "description": "大致晴朗"
+        "tempMax": 31.1,
+        "tempMin": 26.8,
+        "precipitation": 3.2,
+        "code": 53,
+        "description": "毛毛雨（中）"
       },
       "sheets": 14,
       "ushowTotal": 13440,
