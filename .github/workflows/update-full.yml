@@ -2,12 +2,17 @@ name: 全量業績更新
 
 on:
   schedule:
-    # 台北時間 01:00（UTC 17:00）
-    - cron: '0 17 * * *'
+    # 台北時間 01:07（UTC 17:07），避開整點尖峰；主要觸發改由 cron-job.org 呼叫 workflow_dispatch，這裡只當備援
+    - cron: '7 17 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+# 跟今日銷售共用同一組，避免兩個流程同時 force push
+concurrency:
+  group: pinoko-update
+  cancel-in-progress: false
 
 jobs:
   update:

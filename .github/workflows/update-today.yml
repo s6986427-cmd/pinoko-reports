@@ -2,12 +2,18 @@ name: 今日銷售更新
 
 on:
   schedule:
-    # 台北時間 13:00~00:30 每半小時（UTC+8，換算 UTC）
-    - cron: '0,30 5,6,7,8,9,10,11,12,13,14,15,16 * * *'
+    # 台北時間 13:07~00:37 每半小時（UTC+8，換算 UTC）
+    # 避開整點/半點尖峰，GitHub 排程較不會被跳過；主要觸發改由 cron-job.org 呼叫 workflow_dispatch，這裡只當備援
+    - cron: '7,37 5,6,7,8,9,10,11,12,13,14,15,16 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+# 外部鬧鐘和 GitHub 排程同時觸發時，排隊一個一個跑，避免兩邊同時 force push
+concurrency:
+  group: pinoko-update
+  cancel-in-progress: false
 
 jobs:
   update:
