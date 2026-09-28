@@ -1150,10 +1150,28 @@ function notify(title, body) {
   } catch {}
 }
 
+// 探測外網：1.1.1.1 / 8.8.8.8 任一個 443 連得上就算有網路
+function isOnline(timeoutMs = 5000) {
+  const net = require('net');
+  const probe = host => new Promise(resolve => {
+    const s = net.connect({ host, port: 443 });
+    const done = ok => { s.destroy(); resolve(ok); };
+    s.setTimeout(timeoutMs, () => done(false));
+    s.once('connect', () => done(true));
+    s.once('error', () => done(false));
+  });
+  return Promise.all([probe('1.1.1.1'), probe('8.8.8.8')]).then(r => r.some(Boolean));
+}
+
 if (require.main === module) {
-  main().catch(err => {
+  main().catch(async err => {
     console.error('更新失敗:', err.message);
-    notify('皮諾可報表 更新失敗', err.message);
+    // 斷網造成的失敗不發通知：today 每 30 分鐘會再跑、雲端 Actions 也會照常更新網頁
+    if (!IS_CLOUD && !(await isOnline())) {
+      console.log('📴 目前沒有網路，略過失敗通知，等網路恢復後下一次排程自動補上');
+    } else {
+      notify('皮諾可報表 更新失敗', err.message);
+    }
     process.exit(1);
   });
 }
