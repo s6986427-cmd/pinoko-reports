@@ -259,6 +259,7 @@ const BRAND_MAP_ID = {
   'f8bda084-1f4a-4e88-be1f-9ef5ed56827b': '5000',
   '6053ff05-b3a4-4ed6-afe5-f88c1ea9e55e': '6000', // 台灣朝聖之路（2026/8/23 新增）
   '96327c2c-dffe-4e07-8905-69cdc5f76103': '2001', // 美好城市系列/高雄美好事物（2026/8/23 新增）
+  '5307b77c-9352-4489-8625-9895b5d50b90': '7000', // 笨道策展/浪人聯名T系列（2026/9/30 新增）
 };
 
 async function buildKindBrandMap(token) {
@@ -280,6 +281,7 @@ const BRANDS = [
   { code: '5000', name: '懶獸',            color: '#FF9457', emoji: '🦥' },
   { code: '6000', name: '台灣朝聖之路',      color: '#D4A017', emoji: '⛩️' },
   { code: '2001', name: '美好城市系列（高雄）', color: '#E8590C', emoji: '🏙️' },
+  { code: '7000', name: '笨道策展（浪人聯名）', color: '#9254DE', emoji: '🎪' },
 ];
 const SKIP_KIND = new Set(['折扣','折讓','招待','貼紙促銷','訂金','自訂商品','朝聖護照單件優惠100']);
 
