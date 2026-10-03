@@ -1,0 +1,147 @@
+{
+  "days": [
+    {
+      "date": "10/1",
+      "sheets": 0,
+      "ushowTotal": 0,
+      "ushowExpense": 0,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 0,
+      "expense": 0,
+      "net": 0
+    },
+    {
+      "date": "10/2",
+      "sheets": 3,
+      "ushowTotal": 3660,
+      "ushowExpense": 0,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 3660,
+      "expense": 0,
+      "net": 3660
+    },
+    {
+      "date": "10/3",
+      "weather": {
+        "tempMax": 32,
+        "tempMin": 25.2,
+        "precipitation": 0.5,
+        "code": 51,
+        "description": "毛毛雨（弱）"
+      },
+      "sheets": 15,
+      "ushowTotal": 31890,
+      "ushowExpense": 2003,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 31890,
+      "expense": 2003,
+      "net": 29887
+    }
+  ],
+  "brandMonth": {
+    "2000": 32074,
+    "2001": 893,
+    "3000": 790,
+    "4000": -100,
+    "7000": 1893
+  },
+  "monthTotal": 35550,
+  "monthExpense": 2003,
+  "hourlyMonth": [
+    {
+      "Time": "13",
+      "Total": 0,
+      "Cash": 0,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "UberEatsPrice": 0,
+      "People": 1,
+      "SaleCounts": 1,
+      "VoidCounts": 0,
+      "FoodCounts": 40,
+      "Count": 1
+    },
+    {
+      "Time": "14",
+      "Total": 2860,
+      "Cash": 1880,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "UberEatsPrice": 0,
+      "People": 2,
+      "SaleCounts": 2,
+      "VoidCounts": 2,
+      "FoodCounts": 4,
+      "Count": 2
+    },
+    {
+      "Time": "15",
+      "Total": 3960,
+      "Cash": 200,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "UberEatsPrice": 0,
+      "People": 3,
+      "SaleCounts": 3,
+      "VoidCounts": 0,
+      "FoodCounts": 6,
+      "Count": 3
+    },
+    {
+      "Time": "16",
+      "Total": 11880,
+      "Cash": 0,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "UberEatsPrice": 0,
+      "People": 5,
+      "SaleCounts": 5,
+      "VoidCounts": 0,
+      "FoodCounts": 14,
+      "Count": 5
+    },
+    {
+      "Time": "17",
+      "Total": 4170,
+      "Cash": 4170,
+      "Change": 400,
+      "CreditCardPrice": 0,
+      "UberEatsPrice": 0,
+      "People": 2,
+      "SaleCounts": 2,
+      "VoidCounts": 0,
+      "FoodCounts": 10,
+      "Count": 2
+    },
+    {
+      "Time": "18",
+      "Total": 6340,
+      "Cash": 3660,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "UberEatsPrice": 0,
+      "People": 3,
+      "SaleCounts": 3,
+      "VoidCounts": 1,
+      "FoodCounts": 13,
+      "Count": 3
+    },
+    {
+      "Time": "22",
+      "Total": 6340,
+      "Cash": 1310,
+      "Change": 0,
+      "CreditCardPrice": 0,
+      "UberEatsPrice": 0,
+      "People": 2,
+      "SaleCounts": 2,
+      "VoidCounts": 2,
+      "FoodCounts": 7,
+      "Count": 2
+    }
+  ],
+  "updatedAt": "2026-10-03T22:50:27.000Z"
+}
