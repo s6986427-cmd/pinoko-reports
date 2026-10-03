@@ -25,9 +25,9 @@
     {
       "date": "10/3",
       "weather": {
-        "tempMax": 32,
-        "tempMin": 25.2,
-        "precipitation": 0.5,
+        "tempMax": 31.4,
+        "tempMin": 25.6,
+        "precipitation": 0.2,
         "code": 51,
         "description": "毛毛雨（弱）"
       },
