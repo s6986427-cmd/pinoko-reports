@@ -280,8 +280,8 @@ const BRANDS = [
   { code: '3000', name: '世界漂亮在台協會',  color: '#F6BD16', emoji: '🌏' },
   { code: '5000', name: '懶獸',            color: '#FF9457', emoji: '🦥' },
   { code: '6000', name: '台灣朝聖之路',      color: '#D4A017', emoji: '⛩️' },
-  { code: '2001', name: '美好城市系列（高雄）', color: '#E8590C', emoji: '🏙️' },
-  { code: '7000', name: '笨道策展（浪人聯名）', color: '#9254DE', emoji: '🎪' },
+  { code: '2001', name: '美好城市系列', color: '#E8590C', emoji: '🏙️' },
+  { code: '7000', name: '笨道策展', color: '#9254DE', emoji: '🎪' },
 ];
 const SKIP_KIND = new Set(['折扣','折讓','招待','貼紙促銷','訂金','自訂商品','朝聖護照單件優惠100']);
 
