@@ -285,49 +285,6 @@ const BRANDS = [
 ];
 const SKIP_KIND = new Set(['折扣','折讓','招待','貼紙促銷','訂金','自訂商品','朝聖護照單件優惠100']);
 
-// ── 商品排名：衣服同款同色各尺寸合併成一行，點擊展開看各尺寸（2026/10/12）──────
-// 這三個函式會用 .toString() 注入桌面互動版的瀏覽器端，所以只用 ES5 寫法、不用反引號
-function groupSizes(prods) {
-  var ORDER = ['XS','S','M','L','XL','2XL','XXL','3XL','XXXL','4XL','5XL'];
-  var re = /^(.+)-(XS|S|M|L|XL|2XL|XXL|3XL|XXXL|4XL|5XL)$/i;
-  var map = {}, out = [];
-  prods.forEach(function (p) {
-    var m = String(p.FoodName).match(re);
-    if (!m) { out.push(p); return; }
-    var g = map[m[1]];
-    if (!g) { g = map[m[1]] = { FoodName: m[1], Qty: 0, Total: 0, Times: 0, sizes: [] }; out.push(g); }
-    g.Qty += p.Qty || 0; g.Total += p.Total || 0; g.Times += p.Times || 0;
-    g.sizes.push({ size: m[2].toUpperCase(), Qty: p.Qty || 0, Total: p.Total || 0, Times: p.Times || 0 });
-  });
-  out.forEach(function (g) { if (g.sizes) g.sizes.sort(function (a, b) { return ORDER.indexOf(a.size) - ORDER.indexOf(b.size); }); });
-  return out.sort(function (a, b) { return b.Qty - a.Qty; });
-}
-
-function rankRowsHtml(prods, color, sheets) {
-  function crCell(times) {
-    var pct = sheets > 0 ? (times / sheets * 100).toFixed(1) : 0;
-    var bar = sheets > 0 ? Math.min(times / sheets * 300, 100).toFixed(1) : 0;
-    return '<td style="padding:8px 10px"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:7px;background:#eee;border-radius:4px;overflow:hidden;min-width:60px"><div style="height:100%;background:' + color + ';width:' + bar + '%;border-radius:4px"></div></div><span style="min-width:40px;font-size:12px;color:' + color + ';font-weight:600">' + pct + '%</span></div></td>';
-  }
-  return prods.map(function (p, i) {
-    var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '<span style="color:#aaa">#' + (i + 1) + '</span>';
-    var nums = '<td style="text-align:right;padding:8px 10px;font-weight:600">' + p.Qty + '</td><td style="text-align:right;padding:8px 10px">$' + (p.Total || 0).toLocaleString() + '</td>' + crCell(p.Times);
-    if (!p.sizes) return '<tr><td style="text-align:center;font-size:13px;padding:8px 10px">' + medal + '</td><td style="padding:8px 10px">' + p.FoodName + '</td>' + nums + '</tr>';
-    var head = '<tr class="grp" onclick="tgSz(this)" style="cursor:pointer"><td style="text-align:center;font-size:13px;padding:8px 10px">' + medal + '</td><td style="padding:8px 10px"><span class="caret" style="display:inline-block;width:14px;color:#aaa;font-size:10px">▶</span>' + p.FoodName + ' <span style="font-size:11px;color:#aaa">' + p.sizes.length + ' 個尺寸</span></td>' + nums + '</tr>';
-    var subs = p.sizes.map(function (s) {
-      return '<tr class="sz" style="display:none;background:#fafafa;font-size:12px"><td></td><td style="padding:6px 10px 6px 30px;color:#666">' + s.size + '</td><td style="text-align:right;padding:6px 10px;font-weight:600;color:#555">' + s.Qty + '</td><td style="text-align:right;padding:6px 10px;color:#777">$' + (s.Total || 0).toLocaleString() + '</td>' + crCell(s.Times) + '</tr>';
-    }).join('');
-    return head + subs;
-  }).join('');
-}
-
-function tgSz(tr) {
-  var open = tr.classList.toggle('open');
-  tr.querySelector('.caret').textContent = open ? '▼' : '▶';
-  var n = tr.nextElementSibling;
-  while (n && n.classList.contains('sz')) { n.style.display = open ? '' : 'none'; n = n.nextElementSibling; }
-}
-
 // ── 今日銷售 HTML ─────────────────────────────────────────────────────────────
 
 function buildTodayHtml(data, updatedAt, dateLabel) {
@@ -342,14 +299,19 @@ function buildTodayHtml(data, updatedAt, dateLabel) {
   }).join('');
 
   const tables = BRANDS.map(b => {
-    const prods = groupSizes(productsByBrand[b.code]||[]);
+    const prods = productsByBrand[b.code]||[];
     if (!prods.length) return '';
-    const rows = rankRowsHtml(prods, b.color, todaySheets);
-    return `<div class="chart-card"><div class="brand-header"><span style="font-size:20px">${b.emoji}</span><h2 style="margin-bottom:0">${b.name}｜今日商品銷量排名</h2><span class="brand-badge" style="background:${b.color}">${prods.length} 項</span></div><div class="sub-note">點擊率 = 含此商品訂單數 ÷ 今日總筆數（${todaySheets} 筆）｜衣服點一下可展開各尺寸</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px"><table class="ranking-table"><thead><tr><th style="width:42px">排名</th><th>商品</th><th style="text-align:right">銷量</th><th style="text-align:right">銷售額</th><th style="min-width:140px">點擊率</th></tr></thead><tbody>${rows}</tbody></table><div><canvas id="chart_today_rank_${b.code}" style="max-height:400px"></canvas></div></div></div>`;
+    const rows = prods.map((p,i) => {
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="color:#aaa">#${i+1}</span>`;
+      const pct = todaySheets>0?(p.Times/todaySheets*100).toFixed(1):0;
+      const bar = todaySheets>0?Math.min(p.Times/todaySheets*300,100).toFixed(1):0;
+      return `<tr><td style="text-align:center;font-size:13px;padding:8px 10px">${medal}</td><td style="padding:8px 10px">${p.FoodName}</td><td style="text-align:right;padding:8px 10px;font-weight:600">${p.Qty}</td><td style="text-align:right;padding:8px 10px">$${(p.Total||0).toLocaleString()}</td><td style="padding:8px 10px"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:7px;background:#eee;border-radius:4px;overflow:hidden;min-width:60px"><div style="height:100%;background:${b.color};width:${bar}%;border-radius:4px"></div></div><span style="min-width:40px;font-size:12px;color:${b.color};font-weight:600">${pct}%</span></div></td></tr>`;
+    }).join('');
+    return `<div class="chart-card"><div class="brand-header"><span style="font-size:20px">${b.emoji}</span><h2 style="margin-bottom:0">${b.name}｜今日商品銷量排名</h2><span class="brand-badge" style="background:${b.color}">${prods.length} 項</span></div><div class="sub-note">點擊率 = 含此商品訂單數 ÷ 今日總筆數（${todaySheets} 筆）</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px"><table class="ranking-table"><thead><tr><th style="width:42px">排名</th><th>商品</th><th style="text-align:right">銷量</th><th style="text-align:right">銷售額</th><th style="min-width:140px">點擊率</th></tr></thead><tbody>${rows}</tbody></table><div><canvas id="chart_today_rank_${b.code}" style="max-height:400px"></canvas></div></div></div>`;
   }).join('');
 
   const tableCharts = BRANDS.map(b => {
-    const prods = groupSizes(productsByBrand[b.code]||[]);
+    const prods = productsByBrand[b.code]||[];
     if (!prods.length) return '';
     const top15 = prods.slice(0,15);
     return `new Chart(document.getElementById('chart_today_rank_${b.code}'),{type:'bar',data:{labels:${JSON.stringify(top15.map(p=>p.FoodName))},datasets:[{data:${JSON.stringify(top15.map(p=>p.Qty))},backgroundColor:'${b.color}cc',borderColor:'${b.color}',borderWidth:1,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x+' 件'}}},scales:{x:{grid:{color:'#f0f0f0'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});`;
@@ -425,7 +387,6 @@ new Chart(document.getElementById('chart_pie'),{type:'doughnut',data:{labels:CAT
 new Chart(document.getElementById('chart_bar'),{type:'bar',data:{labels:CATS.map(c=>c.label),datasets:[{data:CATS.map(c=>c.value),backgroundColor:CATS.map(c=>c.color+'cc'),borderColor:CATS.map(c=>c.color),borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString()}}},scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}});
 ${tableCharts}
 ${hourlyJs}
-${tgSz.toString()}
 </script>
 </body></html>`;
 }
@@ -555,14 +516,17 @@ async function fetchSalePages(beginIso, endIso){
   return all;
 }
 
-${groupSizes.toString()}
-${rankRowsHtml.toString()}
-${tgSz.toString()}
+function medalFor(i){ return i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:#aaa">#'+(i+1)+'</span>'; }
 
 function buildBrandBlock(b, prods, sheets){
   if (!prods.length) return '';
-  const rows = rankRowsHtml(prods, b.color, sheets);
-  return '<div class="chart-card"><div class="brand-header"><span style="font-size:20px">'+b.emoji+'</span><h2 style="margin-bottom:0">'+b.name+'｜商品銷量排名</h2><span class="brand-badge" style="background:'+b.color+'">'+prods.length+' 項</span></div><div class="sub-note">點擊率 = 含此商品訂單數 ÷ 總筆數（'+sheets+' 筆）｜衣服點一下可展開各尺寸</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px"><table class="ranking-table"><thead><tr><th style="width:42px">排名</th><th>商品</th><th style="text-align:right">銷量</th><th style="text-align:right">銷售額</th><th style="min-width:140px">點擊率</th></tr></thead><tbody>'+rows+'</tbody></table><div><canvas id="chart_rank_'+b.code+'" style="max-height:400px"></canvas></div></div></div>';
+  const rows = prods.map((p,i)=>{
+    const medal = medalFor(i);
+    const pct = sheets>0 ? (p.Times/sheets*100).toFixed(1) : 0;
+    const bar = sheets>0 ? Math.min(p.Times/sheets*300,100).toFixed(1) : 0;
+    return '<tr><td style="text-align:center;font-size:13px;padding:8px 10px">'+medal+'</td><td style="padding:8px 10px">'+p.FoodName+'</td><td style="text-align:right;padding:8px 10px;font-weight:600">'+p.Qty+'</td><td style="text-align:right;padding:8px 10px">$'+(p.Total||0).toLocaleString()+'</td><td style="padding:8px 10px"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:7px;background:#eee;border-radius:4px;overflow:hidden;min-width:60px"><div style="height:100%;background:'+b.color+';width:'+bar+'%;border-radius:4px"></div></div><span style="min-width:40px;font-size:12px;color:'+b.color+';font-weight:600">'+pct+'%</span></div></td></tr>';
+  }).join('');
+  return '<div class="chart-card"><div class="brand-header"><span style="font-size:20px">'+b.emoji+'</span><h2 style="margin-bottom:0">'+b.name+'｜商品銷量排名</h2><span class="brand-badge" style="background:'+b.color+'">'+prods.length+' 項</span></div><div class="sub-note">點擊率 = 含此商品訂單數 ÷ 總筆數（'+sheets+' 筆）</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px"><table class="ranking-table"><thead><tr><th style="width:42px">排名</th><th>商品</th><th style="text-align:right">銷量</th><th style="text-align:right">銷售額</th><th style="min-width:140px">點擊率</th></tr></thead><tbody>'+rows+'</tbody></table><div><canvas id="chart_rank_'+b.code+'" style="max-height:400px"></canvas></div></div></div>';
 }
 
 function render(data, dateLabel){
@@ -598,12 +562,10 @@ function render(data, dateLabel){
   }
 
   let tablesHtml = '';
-  const grouped = {};
-  BRANDS.forEach(b=>{ grouped[b.code] = groupSizes(data.productsByBrand[b.code]||[]); });
-  BRANDS.forEach(b=>{ tablesHtml += buildBrandBlock(b, grouped[b.code], data.todaySheets); });
+  BRANDS.forEach(b=>{ tablesHtml += buildBrandBlock(b, data.productsByBrand[b.code]||[], data.todaySheets); });
   document.getElementById('rankingTables').innerHTML = tablesHtml;
   BRANDS.forEach(b=>{
-    const prods = grouped[b.code];
+    const prods = data.productsByBrand[b.code]||[];
     if (!prods.length) return;
     const top15 = prods.slice(0,15);
     const canvas = document.getElementById('chart_rank_'+b.code);
