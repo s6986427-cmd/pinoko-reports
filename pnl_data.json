@@ -86,6 +86,24 @@
       "total": 0,
       "expense": 0,
       "net": 0
+    },
+    {
+      "date": "11/7",
+      "weather": {
+        "tempMax": 29.6,
+        "tempMin": 22.7,
+        "precipitation": 0,
+        "code": 3,
+        "description": "陰天"
+      },
+      "sheets": 0,
+      "ushowTotal": 0,
+      "ushowExpense": 0,
+      "extraIncome": 0,
+      "extraExpense": 0,
+      "total": 0,
+      "expense": 0,
+      "net": 0
     }
   ],
   "brandMonth": {
@@ -205,5 +223,5 @@
       "Count": 2
     }
   ],
-  "updatedAt": "2026-11-06T06:38:59.000Z"
+  "updatedAt": "2026-11-07T06:00:39.000Z"
 }
