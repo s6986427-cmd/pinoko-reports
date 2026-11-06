@@ -72,11 +72,11 @@
     {
       "date": "11/6",
       "weather": {
-        "tempMax": 30.6,
-        "tempMin": 23.3,
-        "precipitation": 0.1,
-        "code": 51,
-        "description": "毛毛雨（弱）"
+        "tempMax": 29.6,
+        "tempMin": 22.7,
+        "precipitation": 0,
+        "code": 3,
+        "description": "陰天"
       },
       "sheets": 0,
       "ushowTotal": 0,
