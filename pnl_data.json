@@ -300,8 +300,8 @@
     {
       "date": "11/28",
       "weather": {
-        "tempMax": 26.6,
-        "tempMin": 17.3,
+        "tempMax": 27.5,
+        "tempMin": 20.3,
         "precipitation": 0,
         "code": 3,
         "description": "陰天"
